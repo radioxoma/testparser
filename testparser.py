@@ -29,6 +29,7 @@ class Question(object):
         super(Question, self).__init__()
         self.question = question
         self.answers = OrderedDict()
+        self.image_path = None
 
     def add_multiple_answers(self, variants, correct):
         """Add bunch of answer-corect_or_none pairs.
@@ -50,8 +51,18 @@ class Question(object):
         assert(isinstance(correct, unicode) or isinstance(correct, str))
         self.answers[variant] = correct
 
+    def add_image_path(self, im_path):
+        """Add link to image file.
+
+        :param str im_path: Path to image file.
+        """
+        self.image_path = im_path
+
     def __unicode__(self):
-        """Formatted representation in MyTextX style.
+        """Formatted representation in human-readable format (MyTextX style).
+
+        There are general functions for exporting quiz in specific formats
+        named 'to_mytestx', 'to_anki' etc.
 
         It's convenient for reading too:
             # An Question
@@ -62,6 +73,8 @@ class Question(object):
             *An empty string between tests.*
         """
         info = u'# {}\n'.format(self.question)
+        if self.image_path:
+            info += u'@ {}\n'.format(self.image_path)
         for v, c in self.answers.iteritems():
             info += u'{} {}\n'.format(c, v)
         return info
@@ -94,7 +107,7 @@ def unify(seq):
     return uniq
 
 
-def parse_do(doc):
+def parse_do(filename):
     """do.vsmu.by Moodle tests parser.
 
     TODO:
@@ -106,17 +119,28 @@ def parse_do(doc):
     .//*[@id='content']/div[@class='que match clearfix'] сопоставление
     .//*[@id='content']/div[@class='que multianswer clearfix'] выбрать из ниспадающего меню
     """
+    doc = lxml.html.parse(filename).getroot()
     questions = list()
 
     multichoice = doc.find_class('que multichoice clearfix')
     for test in multichoice:
         test_question = u' '.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
         Q = Question(test_question)
-
+        img = test.xpath(".//div[@class='content']/div[@class='qtext']//img")
+        if img:
+            # absolute path to image
+            # abs_im_path = os.path.join(
+            #     os.path.dirname(os.path.abspath(filename)),
+            #     img[0].get('src'))
+            # if os.path.exists(abs_im_path) and os.path.isfile(abs_im_path):
+            #     Q.add_image_path(abs_im_path.decode('utf-8'))
+            # else:
+            #     raise ValueError("Image not exists: {}".format(im_path))
+            Q.add_image_path(img[0].get('src'))
         ## Answers
-        choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']/tr/td/label/text()")
+        choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()")
         test_choices = clear(choices)
-        correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']/tr/td/label/img[@class='icon']")
+        correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
         test_correct = list()
         for c in correct:
             test_correct.append(c.attrib.get('alt'))
@@ -138,7 +162,7 @@ def parse_do(doc):
     ###########################################################################
     multianswer = doc.find_class('que multianswer clearfix')
     for test in multianswer:
-        raise NotImplementedError("Testing needed")
+        raise NotImplementedError("No export. Testing needed.")
         # Название теста
         test_question = u' {?} '.join(clear(test.xpath("./div[@class='content']/div[@class='ablock clearfix']//text()")))
         # print('# %s' % test_question.encode('utf-8'))
@@ -192,9 +216,11 @@ def parse_do(doc):
     return questions
 
 
-def parse_evsmu(doc):
+def parse_evsmu(filename):
     """e-vsmu.by Moodle tests parser.
     """
+    doc = lxml.html.parse(filename).getroot()
+
     questions = list()
     content = doc.find_class('content')
     for test in content:
@@ -280,7 +306,7 @@ def main(args):
     tests = list()
     for filename in args.input:
         if filename.endswith('.htm'):
-            tests.extend(selected_parser(lxml.html.parse(filename).getroot()))
+            tests.extend(selected_parser(filename))
 
     print("%d questions total") % len(tests)
 
