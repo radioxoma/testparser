@@ -99,6 +99,9 @@ class Question(object):
 
 def clear(strlist):
     """Remove empty strings and spaces from sequence.
+
+    >>> clear(['123', '12', '', '2', '1', ''])
+    ['123', '12', '2', '1']
     """
     return filter(None, map(lambda x: x.strip(), strlist))
 
@@ -122,22 +125,24 @@ def unify(seq):
 
 
 def short(text, count_stripped=False):
-    """Shortened word or words in list.
-    >>> short('Что неверно в клинической картине свершившегося'.split())
-    >>> Что неверно в кли-ой картине све-ся
+    """
+    >>> short(u'Something wrong with compatibility regressions.'.split())
+    u'Som-ng wrong with com-ty reg-s.'
+    >>> short(u'Something wrong with compatibility regressions.'.split(), True)
+    u'Som4ng wrong with com8ty reg7s.'
     """
     def sh(word):
         l = len(word)
         if l > 7:
             if count_stripped:
-                return u"{}{}{}".format(word[3], l - 5, word[-2:])
+                return u"{}{}{}".format(word[:3], l - 5, word[-2:])
             else:
                 return u"{}-{}".format(word[:3], word[-2:])
         else:
             return word
 
     if isinstance(text, str):
-        return sh(word)
+        return sh(text)
     else:
         return u" ".join(map(sh, text))
 
@@ -146,6 +151,11 @@ def min_diff(strlist):
     """Return maximum shortened but distinguishable string list.
 
     Strings must be sorted already.
+    >>> min_diff(sorted(
+    ...     [u'Clinical notes is the same way',
+    ...      u'Clinical symptoms of lupus',
+    ...      u'Clinical symptoms of lupus or something sophisticated']))
+    [u'Cli-al notes is the same way', u'Cli-al sym-ms of lupus', u'Cli-al sym-ms of lupus or']
     """
     questions = list()
     while len(strlist) > 0:
