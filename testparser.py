@@ -58,6 +58,15 @@ class Question(object):
         """
         self.image_path = im_path
 
+    def correct(self):
+        """Return only correct answers.
+        """
+        correct = list()
+        for v, c in self.answers.items():
+            if c == u'+':
+                correct.append(v)
+        return correct
+
     def __unicode__(self):
         """Formatted representation in human-readable format (MyTextX style).
 
@@ -112,6 +121,47 @@ def unify(seq):
     return uniq
 
 
+def short(text, count_stripped=False):
+    """Shortened word or words in list.
+    >>> short('Что неверно в клинической картине свершившегося'.split())
+    >>> Что неверно в кли-ой картине све-ся
+    """
+    def sh(word):
+        l = len(word)
+        if l > 7:
+            if count_stripped:
+                return u"{}{}{}".format(word[3], l - 5, word[-2:])
+            else:
+                return u"{}-{}".format(word[:3], word[-2:])
+        else:
+            return word
+
+    if isinstance(text, str):
+        return sh(word)
+    else:
+        return u" ".join(map(sh, text))
+
+
+def min_diff(strlist):
+    """Return maximum shortened but distinguishable string list.
+
+    Strings must be sorted already.
+    """
+    questions = list()
+    while len(strlist) > 0:
+        if len(strlist) > 1:
+            if strlist[-2] in strlist[-1]:
+                prelast = strlist[-2].split()
+                last = strlist.pop().split()
+                prelast_word_plus = last[:len(prelast) + 1]  # + 1 different word
+                questions.append(short(prelast_word_plus))
+            else:
+                questions.append(short(strlist.pop().split()))
+        else:
+            questions.append(short(strlist.pop().split()))
+    return questions[::-1]
+
+
 def parse_do(filename):
     """do.vsmu.by Moodle tests parser.
 
@@ -151,7 +201,7 @@ def parse_do(filename):
                 print(Q)
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
-                    "If correct answers is not provided by test page, use `--na` option.")
+                    "If correct answers are not provided by test page, use `--na` option.")
         for C, A in itertools.izip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
@@ -278,7 +328,7 @@ def to_anki(tests):
     for q in tests:
         all_answ = u'<div style="text-align:left">'
         cor_answ = u'<div style="text-align:left">'
-        for n, (v, c) in enumerate(q.answers.iteritems(), 1):
+        for n, (v, c) in enumerate(q.answers.items(), 1):
             all_answ += u'{}. {}<br>'.format(n, v)
             if c == u'+':
                 # html ol li wasn't used to allow usage of arbitrary
@@ -291,6 +341,19 @@ def to_anki(tests):
     out = u''.join(strlst)
     assert isinstance(out, unicode)
     return out
+
+
+def to_crib(tests):
+    """Shorten tests for crib.
+    """
+    questions = min_diff(map(attrgetter('question'), tests))
+    result = list()
+    for question, test in zip(questions, tests):
+        result.append(
+            u"{}: {}".format(
+                question,
+                u', '.join(min_diff(sorted(test.correct())))))
+    return "\n".join(result)
 
 
 def main(args):
@@ -311,7 +374,7 @@ def main(args):
     print("{} questions total".format(len(tests)))
 
     # Questions filtering
-    tests.sort(key=attrgetter('question'))
+    tests.sort(key=lambda q: q.question.lower())
     if args.unify:
         nofiltered = len(tests)
         tests = unify(tests)
@@ -329,7 +392,9 @@ def main(args):
             errors='ignore') as f:
             f.write(to_anki(tests))
     if args.to_crib:
-        print(to_crib(tests))
+        with io.open(args.to_crib, mode='w', encoding='utf-8',
+            errors='ignore', newline='\r\n') as f:
+            f.write(to_crib(tests))
 
 
 if __name__ == '__main__':
@@ -343,5 +408,6 @@ if __name__ == '__main__':
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
     parser.add_argument("--to-anki", help="Save to tab-formatted text file for import in Anki cards http://ankisrs.net")
+    parser.add_argument("--to-crib", help="Save in crib-like text.")
     args = parser.parse_args()
     main(args)
