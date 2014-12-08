@@ -75,12 +75,17 @@ class Question(object):
         info = u'# {}\n'.format(self.question)
         if self.image_path:
             info += u'@ {}\n'.format(self.image_path)
-        for v, c in self.answers.iteritems():
+        for v, c in self.answers.items():
             info += u'{} {}\n'.format(c, v)
         return info
 
     def __str__(self):
-        return self.__unicode__().encode('utf-8')
+        data = self.__unicode__().encode('utf-8')
+        # Python3 compatibility
+        if isinstance(data, str):
+            return data
+        else:
+            return self.__unicode__()
 
 
 def clear(strlist):
@@ -103,7 +108,7 @@ def unify(seq):
         if k.question not in seen and not seen_add(k.question):
             uniq.append(k)
         else:
-            print("Next question was skipped:\n%s") % k
+            print("Next question was skipped:\n{}".format(k))
     return uniq
 
 
@@ -141,22 +146,21 @@ def parse_do(filename):
         choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()")
         test_choices = clear(choices)
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
-        test_correct = list()
-        for c in correct:
-            test_correct.append(c.attrib.get('alt'))
         if not args.na:
-            if len(test_choices) != len(test_correct):
+            if len(test_choices) != len(correct):
                 print(Q)
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers is not provided by test page, use `--na` option.")
-        for C, A in itertools.izip_longest(test_correct, test_choices):
+        for C, A in itertools.izip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
-            if C == u'Верно':
-                C = '+'
+            if C is not None:
+                if C.attrib['alt'] == u'Верно':
+                    Q.add_one_answer(A, u'+')
+                else:
+                    Q.add_one_answer(A, u'-')
             else:
-                C = '-'
-            Q.add_one_answer(A, C)
+                Q.add_one_answer(A, u'-')
         questions.append(Q)
 
     ###########################################################################
@@ -230,26 +234,22 @@ def parse_evsmu(filename):
         Q = Question(u' '.join(textQuestion.split()))
         ## Answers
         correct = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
-        answers = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div')
-
+        answers = clear(test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/text()'))
         if not args.na:
             if len(answers) != len(correct):
                 print(Q)
-                raise ValueError("Number of variants does not match with number of correct answers")
-                #print('\n'.join(var+corr))
-            corr = list()
-            # What is wrong with ".get()" and unicode?
-            for c in [c.get('alt') for c in correct]:
-                if c == u'Верно':
-                    c = u'+'
+                raise ValueError(
+                    "Number of variants does not match with number of correct answers.\n"
+                    "If correct answers is not provided by test page, use `--na` option.")
+        for C, A in itertools.izip_longest(correct, answers):
+            # `C` is None if correct answer is not provided by page
+            if C is not None:
+                if C.attrib['alt'] == u'Верно':
+                    Q.add_one_answer(A, u'+')
                 else:
-                    c = u'-'
-                corr.append(c)
-        else:
-            NotImplementedError("Need to specify case if correct answers is not provided")
-
-        var = [a.text_content().strip()[3:] for a in answers]
-        Q.add_multiple_answers(var, corr)
+                    Q.add_one_answer(A, u'-')
+            else:
+                Q.add_one_answer(A, u'-')
         questions.append(Q)
     return questions
 
@@ -308,14 +308,14 @@ def main(args):
         if filename.endswith('.htm'):
             tests.extend(selected_parser(filename))
 
-    print("%d questions total") % len(tests)
+    print("{} questions total".format(len(tests)))
 
     # Questions filtering
     tests.sort(key=attrgetter('question'))
     if args.unify:
         nofiltered = len(tests)
         tests = unify(tests)
-        print('%d / %d uniq tests') % (len(tests), nofiltered)
+        print('{} / {} uniq tests'.format(len(tests), nofiltered))
 
     # Output
     if args.p:
@@ -328,6 +328,8 @@ def main(args):
         with io.open(args.to_anki, mode='w', encoding='utf-8',
             errors='ignore') as f:
             f.write(to_anki(tests))
+    if args.to_crib:
+        print(to_crib(tests))
 
 
 if __name__ == '__main__':
