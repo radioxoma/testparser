@@ -158,17 +158,15 @@ def min_diff(strlist):
     [u'Cli-al notes is the same way', u'Cli-al sym-ms of lupus', u'Cli-al sym-ms of lupus or']
     """
     questions = list()
-    while len(strlist) > 0:
-        if len(strlist) > 1:
-            if strlist[-2] in strlist[-1]:
-                prelast = strlist[-2].split()
-                last = strlist.pop().split()
-                prelast_word_plus = last[:len(prelast) + 1]  # + 1 different word
-                questions.append(short(prelast_word_plus))
-            else:
-                questions.append(short(strlist.pop().split()))
+    while len(strlist) > 1:
+        if strlist[-2] in strlist[-1]:
+            prelast = strlist[-2].split()
+            last = strlist.pop().split()
+            prelast_word_plus = last[:len(prelast) + 1]  # + 1 different word
+            questions.append(short(prelast_word_plus))
         else:
             questions.append(short(strlist.pop().split()))
+    questions.append(short(strlist.pop().split()))
     return questions[::-1]
 
 
