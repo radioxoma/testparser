@@ -96,6 +96,16 @@ class Question(object):
         else:
             return self.__unicode__()
 
+    def __eq__(self, other):
+        if not self.question == other.question:
+            return False
+        if not self.image_path == other.image_path:
+            return False
+        return dict(self.answers) == dict(other.answers)  # Order-insensitive
+
+    def __ne__(self, other):
+        return not self == other
+
 
 def clear(strlist):
     """Remove empty strings and spaces from sequence.
