@@ -5,6 +5,8 @@ import io
 import unittest
 import testparser
 
+# TODO: Test parsers with one file and output with another.
+
 
 class TestEvsmu(unittest.TestCase):
     def setUp(self):
@@ -19,11 +21,11 @@ class TestEvsmu(unittest.TestCase):
             self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_evsmu))
 
     def test_evsmu_to_anki_output(self):
-        with io.open('tests/evsmu/g495_anki.csv') as f:
+        with io.open('tests/evsmu/g495_anki.csv', encoding='utf-8') as f:
             self.assertEqual(f.read(), testparser.to_anki(self.quiz_evsmu))
 
     def test_evsmu_to_crib_output(self):
-        with io.open('tests/evsmu/g495_crib.txt') as f:
+        with io.open('tests/evsmu/g495_crib.txt', encoding='utf-8') as f:
             self.assertEqual(f.read(), testparser.to_crib(self.quiz_evsmu))
 
 
@@ -33,8 +35,9 @@ class TestDo(unittest.TestCase):
         self.quiz_do.sort(key=lambda q: q.question.lower())
 
     def test_do_to_mytestx(self):
-        with io.open('tests/do/g100_do_pic.txt', encoding='cp1251') as f:
-            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_do))
+        s1 = set(testparser.parse_mytestx("tests/do/g100_do_pic.txt"))
+        s2 = set(self.quiz_do)
+        self.assertEqual(s1, s2)
 
 
 class TestMytestx(unittest.TestCase):
@@ -65,19 +68,6 @@ class TestMytestx(unittest.TestCase):
     def test_to_mytestx_output(self):
         with io.open('tests/mytestx/quiz_sorted.txt', encoding='cp1251') as f:
             self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_mytestx))
-
-
-    def test_mytestx_to_mytestx_output(self):
-        with io.open('tests/mytestx/quiz_guileful_mytestx.txt', encoding='cp1251') as f:
-            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_mytestx_guileful))
-
-    def test_mytestx_to_anki_output(self):
-        with io.open('tests/mytestx/quiz_guileful_anki.csv') as f:
-            self.assertEqual(f.read(), testparser.to_anki(self.quiz_mytestx_guileful))
-
-    def test_mytestx_to_crib_output(self):
-        with io.open('tests/mytestx/quiz_guileful_crib.txt') as f:
-            self.assertEqual(f.read(), testparser.to_crib(self.quiz_mytestx_guileful))
 
 
 if __name__ == '__main__':
