@@ -164,7 +164,7 @@ def min_diff(strlist):
     return questions[::-1]
 
 
-def parse_do(filename):
+def parse_do(filename, correct_presented=True):
     """do.vsmu.by Moodle tests parser.
 
     TODO:
@@ -198,7 +198,7 @@ def parse_do(filename):
         choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()")
         test_choices = clear(choices)
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
-        if not args.na:
+        if correct_presented:
             if len(test_choices) != len(correct):
                 print(Q)
                 raise ValueError(
@@ -272,7 +272,7 @@ def parse_do(filename):
     return questions
 
 
-def parse_evsmu(filename):
+def parse_evsmu(filename, correct_presented=True):
     """e-vsmu.by Moodle tests parser.
     """
     doc = lxml.html.parse(filename).getroot()
@@ -287,7 +287,7 @@ def parse_evsmu(filename):
         ## Answers
         correct = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
         answers = clear(test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/text()'))
-        if not args.na:
+        if correct_presented:
             if len(answers) != len(correct):
                 print(Q)
                 raise ValueError(
@@ -382,18 +382,16 @@ def to_crib(tests):
 def main(args):
     """Define parser, collect questions.
     """
-    # Choose parser
-    if args.target == "evsmu":
-        selected_parser = parse_evsmu
-    elif args.target == "do":
-        selected_parser = parse_do
-    elif args.target == "mytestx":
-        selected_parser = parse_mytestx
-
     # Define test source & parse to Question class instances
     tests = list()
     for filename in args.input:
-        tests.extend(selected_parser(filename))
+        if args.target == "evsmu":
+            test_part = parse_evsmu(filename, correct_presented=args.na)
+        elif args.target == "do":
+            test_part = parse_do(filename, correct_presented=args.na)
+        elif args.target == "mytestx":
+            test_part = parse_mytestx(filename)
+        tests.extend(test_part)
 
     print(u"{} questions total".format(len(tests)))
 
@@ -402,6 +400,8 @@ def main(args):
         nofiltered = len(tests)
         tests = list(set(tests))
         print(u'{} / {} unique tests'.format(len(tests), nofiltered))
+
+    # Sorting important for crib shortener!
     tests.sort(key=lambda q: q.question.lower())
 
     # Output
@@ -427,7 +427,7 @@ if __name__ == '__main__':
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
-    parser.add_argument("--na", action='store_true', help="Do not raise an exception if page doesn't have question answers.")
+    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove equal tests.")
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
