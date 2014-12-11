@@ -3,7 +3,7 @@ EN: Moodle testpage parser and formatter. These things are for local use, but so
 
 RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Moodle). Ориентирован на студентов ВГМУ и позволяет извлекать тесты и ответы на них из HTML-страниц сайтов e-vsmu.by и do.vsmu.by. Приятные возможности:
 
-* тесты можно вывести в человекочитаемом формате для печати
+* тесты можно вывести в человекочитаемом формате для печати, в том числе в сокращённом виде для шпаргалки
 * тесты можно импортировать в [Anki](http://ankisrs.net) и [MyTestX](http://mytest.klyaksa.net), чтобы проходить тестирование с обучением offline
 
 **У программы нет графического интерфейса.** Её цель - облегчить жизнь опытным пользователям.
@@ -25,11 +25,6 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 Вывести подробную справку по параметрам:
 
     $ python testparser.py --help
-    usage: testparser.py [-h] [--na] [-u] [-p] [--to-mytestx TO_MYTESTX]
-                         [--to-anki TO_ANKI]
-                         {evsmu,do} input [input ...]
-
-    Дальнейший вывод справки опущен.
 
 *Пример 1.* Пропарсить сохранённую браузером страницу с сайта e-vsmu.by и сохранить результат в файл `mytestx.txt`. Его можно читать и печатать; тесты отсортированы по тексту вопроса в алфавитном порядке. Программа выводит сообщение о количестве найденных тестов.
 
@@ -37,9 +32,9 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
     495 questions total
 
 
-*Пример 2.* Объединить несколько страниц тестов с сайта e-vsmu.by и сохранить результат в файл `out.txt`.
+*Пример 2.* Объединить несколько страниц тестов с сайта e-vsmu.by, удалить дубликаты и сохранить результат в файл `out.txt`.
 
-    $ python testparser.py evsmu test1.htm test_second.htm etc.htm --to-mytestx out.txt
+    $ python testparser.py evsmu test1.htm test_second.htm etc.htm -u --to-mytestx out.txt
 
 Импорт полученных данных в сторонние программы выходит за рамки данного руководства.
 

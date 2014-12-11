@@ -310,10 +310,31 @@ def parse_evsmu(filename):
     return questions
 
 
-def parse_parsed(doc):
-    """Do something with tests in parsed format, e.g. analysis.
+def parse_mytestx(filename):
+    """Read text file in MyTestX format.
+
+    Encoding must be cp1251.
     """
-    raise NotImplementedError
+    # q = re.compile("(?<=^#).+(?=\s*$)")
+    # i = re.compile("^(?<=^@).+(?=\s*$)")
+    # v = re.compile("^[+-].+(?=\s*$)")
+    questions = list()
+    first_question = True
+    with io.open(filename, mode='r', encoding='cp1251') as f:
+        for line in f:
+            if line.startswith(u"#"):
+                if not first_question:
+                    questions.append(Q)
+                first_question = False
+                Q = Question(line[1:].strip())
+            elif line.startswith(u"@"):
+                Q.add_image_path(line[1:].strip())
+            elif line.startswith(u"+"):
+                Q.add_one_answer(line[1:].strip(), u"+")
+            elif line.startswith(u"-"):
+                Q.add_one_answer(line[1:].strip(), u"-")
+        questions.append(Q)
+        return questions
 
 
 def to_mytestx(tests):
@@ -370,12 +391,13 @@ def main(args):
         selected_parser = parse_evsmu
     elif args.target == "do":
         selected_parser = parse_do
+    elif args.target == "mytestx":
+        selected_parser = parse_mytestx
 
     # Define test source & parse to Question class instances
     tests = list()
     for filename in args.input:
-        if filename.endswith('.htm'):
-            tests.extend(selected_parser(filename))
+        tests.extend(selected_parser(filename))
 
     print(u"{} questions total".format(len(tests)))
 
@@ -407,7 +429,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do'), help="Parse e-vsmu.by or do.vsmu.by tests")
+    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_true', help="Do not raise an exception if page doesn't have question answers.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove equal tests.")
