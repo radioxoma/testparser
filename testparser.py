@@ -96,7 +96,13 @@ class Question(object):
         else:
             return self.__unicode__()
 
+    def __hash__(self):
+        return hash((self.question, self.image_path,
+            tuple(sorted(self.answers.items()))))
+
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            raise AttributeError("Comparison with other object type")
         if not self.question == other.question:
             return False
         if not self.image_path == other.image_path:
@@ -114,24 +120,6 @@ def clear(strlist):
     ['123', '12', '2', '1']
     """
     return filter(None, map(lambda x: x.strip(), strlist))
-
-
-def unify(seq):
-    """Remove duplicate tests basing on just question.
-
-    This method is verbose.
-    """
-    seen = set()
-    seen_add = seen.add
-    # [x for x in seq if x.question not in seen and not seen_add(x.question)]
-
-    uniq = list()
-    for k in seq:
-        if k.question not in seen and not seen_add(k.question):
-            uniq.append(k)
-        else:
-            print("Next question was skipped:\n{}".format(k))
-    return uniq
 
 
 def short(text, count_stripped=False):
@@ -389,18 +377,18 @@ def main(args):
         if filename.endswith('.htm'):
             tests.extend(selected_parser(filename))
 
-    print("{} questions total".format(len(tests)))
+    print(u"{} questions total".format(len(tests)))
 
     # Questions filtering
-    tests.sort(key=lambda q: q.question.lower())
     if args.unify:
         nofiltered = len(tests)
-        tests = unify(tests)
-        print('{} / {} uniq tests'.format(len(tests), nofiltered))
+        tests = list(set(tests))
+        print(u'{} / {} unique tests'.format(len(tests), nofiltered))
+    tests.sort(key=lambda q: q.question.lower())
 
     # Output
     if args.p:
-        print('\n'.join([str(k) for k in tests]))
+        print(u'\n'.join([str(k) for k in tests]))
     if args.to_mytestx:
         with io.open(args.to_mytestx, mode='w', encoding='cp1251',
             errors='ignore', newline='\r\n') as f:
@@ -422,8 +410,8 @@ if __name__ == '__main__':
     parser.add_argument('target', choices=('evsmu', 'do'), help="Parse e-vsmu.by or do.vsmu.by tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_true', help="Do not raise an exception if page doesn't have question answers.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove tests with equal question texts. Use it with care.")
-    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT")
+    parser.add_argument("-u", "--unify", action='store_true', help="Remove equal tests.")
+    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
     parser.add_argument("--to-anki", help="Save to tab-formatted text file for import in Anki cards http://ankisrs.net")
     parser.add_argument("--to-crib", help="Save in crib-like text.")
