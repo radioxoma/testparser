@@ -138,11 +138,7 @@ def short(text, count_stripped=False):
                 return u"{}-{}".format(word[:3], word[-2:])
         else:
             return word
-
-    if isinstance(text, str):
-        return sh(text)
-    else:
-        return u" ".join(map(sh, text))
+    return u" ".join(map(sh, text))
 
 
 def min_diff(strlist):
@@ -410,7 +406,7 @@ def main(args):
 
     # Output
     if args.p:
-        print(u'\n'.join([str(k) for k in tests]))
+        print(u'\n'.join([unicode(k) for k in tests]))
     if args.to_mytestx:
         with io.open(args.to_mytestx, mode='w', encoding='cp1251',
             errors='ignore', newline='\r\n') as f:
