@@ -1,5 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 
 __description__ = """\
 Parser for e-vsmu.by and do.vsmu.by Moodle HTML test pages. Mediafiles like
@@ -47,8 +52,6 @@ class Question(object):
         :param unicode variants: An answer
         :param unicode correct: '+' or '-'
         """
-        assert(isinstance(variant, unicode) or isinstance(variant, str))
-        assert(isinstance(correct, unicode) or isinstance(correct, str))
         self.answers[variant] = correct
 
     def add_image_path(self, im_path):
@@ -63,7 +66,7 @@ class Question(object):
         """
         correct = list()
         for v, c in self.answers.items():
-            if c == u'+':
+            if c == '+':
                 correct.append(v)
         return correct
 
@@ -81,11 +84,11 @@ class Question(object):
             - Another false-marked answer
             *An empty string between tests.*
         """
-        info = u'# {}\n'.format(self.question)
+        info = '# {}\n'.format(self.question)
         if self.image_path:
-            info += u'@ {}\n'.format(self.image_path)
+            info += '@ {}\n'.format(self.image_path)
         for v, c in self.answers.items():
-            info += u'{} {}\n'.format(c, v)
+            info += '{} {}\n'.format(c, v)
         return info
 
     def __str__(self):
@@ -124,21 +127,21 @@ def clear(strlist):
 
 def short(text, count_stripped=False):
     """
-    >>> short(u'Something wrong with compatibility regressions.'.split())
+    >>> short('Something wrong with compatibility regressions.'.split())
     u'Som-ng wrong with com-ty reg-s.'
-    >>> short(u'Something wrong with compatibility regressions.'.split(), True)
+    >>> short('Something wrong with compatibility regressions.'.split(), True)
     u'Som4ng wrong with com8ty reg7s.'
     """
     def sh(word):
         l = len(word)
         if l > 7:
             if count_stripped:
-                return u"{}{}{}".format(word[:3], l - 5, word[-2:])
+                return "{}{}{}".format(word[:3], l - 5, word[-2:])
             else:
-                return u"{}-{}".format(word[:3], word[-2:])
+                return "{}-{}".format(word[:3], word[-2:])
         else:
             return word
-    return u" ".join(map(sh, text))
+    return " ".join(map(sh, text))
 
 
 def min_diff(strlist):
@@ -146,9 +149,9 @@ def min_diff(strlist):
 
     Strings must be sorted already.
     >>> min_diff(sorted(
-    ...     [u'Clinical notes is the same way',
-    ...      u'Clinical symptoms of lupus',
-    ...      u'Clinical symptoms of lupus or something sophisticated']))
+    ...     ['Clinical notes is the same way',
+    ...      'Clinical symptoms of lupus',
+    ...      'Clinical symptoms of lupus or something sophisticated']))
     [u'Cli-al notes is the same way', u'Cli-al sym-ms of lupus', u'Cli-al sym-ms of lupus or']
     """
     questions = list()
@@ -181,7 +184,7 @@ def parse_do(filename, correct_presented=True):
 
     multichoice = doc.find_class('que multichoice clearfix')
     for test in multichoice:
-        test_question = u' '.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
+        test_question = ' '.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
         Q = Question(test_question)
         img = test.xpath(".//div[@class='content']/div[@class='qtext']//img")
         if img:
@@ -207,12 +210,12 @@ def parse_do(filename, correct_presented=True):
         for C, A in itertools.izip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                if C.attrib['alt'] == u'Верно':
-                    Q.add_one_answer(A, u'+')
+                if C.attrib['alt'] == 'Верно':
+                    Q.add_one_answer(A, '+')
                 else:
-                    Q.add_one_answer(A, u'-')
+                    Q.add_one_answer(A, '-')
             else:
-                Q.add_one_answer(A, u'-')
+                Q.add_one_answer(A, '-')
         questions.append(Q)
 
     ###########################################################################
@@ -220,7 +223,7 @@ def parse_do(filename, correct_presented=True):
     for test in multianswer:
         raise NotImplementedError("No export. Testing needed.")
         # Название теста
-        test_question = u' {?} '.join(clear(test.xpath("./div[@class='content']/div[@class='ablock clearfix']//text()")))
+        test_question = ' {?} '.join(clear(test.xpath("./div[@class='content']/div[@class='ablock clearfix']//text()")))
         # print('# %s' % test_question.encode('utf-8'))
         Q = Question(test_question)
 
@@ -236,22 +239,22 @@ def parse_do(filename, correct_presented=True):
         for answ in answer2:
             this = answ.get('onmouseover')
             # print(this.encode('UTF-8'))
-            rp = re.compile(u'Правильный ответ: (.+?)<\/div>', re.UNICODE)
+            rp = re.compile('Правильный ответ: (.+?)<\/div>', re.UNICODE)
             test_correct = re.search(rp, this).group(1)
             print("Правильно: '%s'" % test_correct.encode('UTF-8'))
 
         # Обоснование ответа
-        # theory = u'\n'.join(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")).strip()
+        # theory = '\n'.join(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")).strip()
         # print(theory.encode('utf-8'))
 
-        print(u'')
+        print('')
 
     ###########################################################################
     match = doc.find_class('que match clearfix')
     for test in match:
         raise NotImplementedError("Testing needed")
         # Название теста
-        test_question = u''.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
+        test_question = ''.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
         print('# %s' % test_question.encode('utf-8'))
         print('*Match не готов (выводим теорию)*')
 
@@ -264,10 +267,10 @@ def parse_do(filename, correct_presented=True):
         # Не могу найти ответы, так что выведем теорию.
 
         # Обоснование ответа
-        theory = u' '.join(clear(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")))
+        theory = ' '.join(clear(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")))
         print(theory.encode('utf-8'))
 
-        print(u'')
+        print('')
 
     return questions
 
@@ -283,7 +286,7 @@ def parse_evsmu(filename, correct_presented=True):
         ## Question
         qwe = test.xpath('child::div[attribute::class="qtext22"]')
         textQuestion = qwe[0].text_content().strip()
-        Q = Question(u' '.join(textQuestion.split()))
+        Q = Question(' '.join(textQuestion.split()))
         ## Answers
         correct = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
         answers = clear(test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/text()'))
@@ -296,12 +299,12 @@ def parse_evsmu(filename, correct_presented=True):
         for C, A in itertools.izip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                if C.attrib['alt'] == u'Верно':
-                    Q.add_one_answer(A, u'+')
+                if C.attrib['alt'] == 'Верно':
+                    Q.add_one_answer(A, '+')
                 else:
-                    Q.add_one_answer(A, u'-')
+                    Q.add_one_answer(A, '-')
             else:
-                Q.add_one_answer(A, u'-')
+                Q.add_one_answer(A, '-')
         questions.append(Q)
     return questions
 
@@ -318,17 +321,17 @@ def parse_mytestx(filename):
     first_question = True
     with io.open(filename, mode='r', encoding='cp1251') as f:
         for line in f:
-            if line.startswith(u"#"):
+            if line.startswith("#"):
                 if not first_question:
                     questions.append(Q)
                 first_question = False
                 Q = Question(line[1:].strip())
-            elif line.startswith(u"@"):
+            elif line.startswith("@"):
                 Q.add_image_path(line[1:].strip())
-            elif line.startswith(u"+"):
-                Q.add_one_answer(line[1:].strip(), u"+")
-            elif line.startswith(u"-"):
-                Q.add_one_answer(line[1:].strip(), u"-")
+            elif line.startswith("+"):
+                Q.add_one_answer(line[1:].strip(), "+")
+            elif line.startswith("-"):
+                Q.add_one_answer(line[1:].strip(), "-")
         questions.append(Q)
         return questions
 
@@ -336,11 +339,10 @@ def parse_mytestx(filename):
 def to_mytestx(tests):
     """Export to MyTestX format; fine for printing.
     """
-    out = u'\n'.join([unicode(k) for k in tests])
-    out = out.replace(u'α', u'альфа')
-    out = out.replace(u'β', u'бета')
-    out = out.replace(u'γ', u'гамма')
-    assert isinstance(out, unicode)
+    out = '\n'.join([unicode(k) for k in tests])
+    out = out.replace('α', 'альфа')
+    out = out.replace('β', 'бета')
+    out = out.replace('γ', 'гамма')
     return out
 
 
@@ -349,20 +351,19 @@ def to_anki(tests):
     """
     strlst = list()
     for q in tests:
-        all_answ = u'<div style="text-align:left">'
-        cor_answ = u'<div style="text-align:left">'
+        all_answ = '<div style="text-align:left">'
+        cor_answ = '<div style="text-align:left">'
         for n, (v, c) in enumerate(q.answers.items(), 1):
-            all_answ += u'{}. {}<br>'.format(n, v)
-            if c == u'+':
+            all_answ += '{}. {}<br>'.format(n, v)
+            if c == '+':
                 # html ol li wasn't used to allow usage of arbitrary
                 # answer number in correct answers list.
-                cor_answ += u'{}. {}<br>'.format(n, v)
-        all_answ += u'</div>'
-        cor_answ += u'</div>'
+                cor_answ += '{}. {}<br>'.format(n, v)
+        all_answ += '</div>'
+        cor_answ += '</div>'
         # Don't use trailing tab: it's needed only for tags.
-        strlst.append(u"{}<br>{}\t{}\n".format(q.question, all_answ, cor_answ))
-    out = u''.join(strlst)
-    assert isinstance(out, unicode)
+        strlst.append("{}<br>{}\t{}\n".format(q.question, all_answ, cor_answ))
+    out = ''.join(strlst)
     return out
 
 
@@ -373,9 +374,9 @@ def to_crib(tests):
     result = list()
     for question, test in zip(questions, tests):
         result.append(
-            u"{}: {}".format(
+            "{}: {}".format(
                 question,
-                u', '.join(min_diff(sorted(test.correct())))))
+                ', '.join(min_diff(sorted(test.correct())))))
     return "\n".join(result)
 
 
@@ -385,7 +386,7 @@ def main(args):
     # Define test source & parse to Question class instances
     tests = list()
     for filename in args.input:
-        if args.target == "evsmu":
+        if args.target == "evsm":
             test_part = parse_evsmu(filename, correct_presented=args.na)
         elif args.target == "do":
             test_part = parse_do(filename, correct_presented=args.na)
@@ -393,20 +394,20 @@ def main(args):
             test_part = parse_mytestx(filename)
         tests.extend(test_part)
 
-    print(u"{} questions total".format(len(tests)))
+    print("{} questions total".format(len(tests)))
 
     # Questions filtering
     if args.unify:
         nofiltered = len(tests)
         tests = list(set(tests))
-        print(u'{} / {} unique tests'.format(len(tests), nofiltered))
+        print('{} / {} unique tests'.format(len(tests), nofiltered))
 
     # Sorting important for crib shortener!
     tests.sort(key=lambda q: q.question.lower())
 
     # Output
     if args.p:
-        print(u'\n'.join([unicode(k) for k in tests]))
+        print('\n'.join([unicode(k) for k in tests]))
     if args.to_mytestx:
         with io.open(args.to_mytestx, mode='w', encoding='cp1251',
             errors='ignore', newline='\r\n') as f:
