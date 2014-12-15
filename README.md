@@ -4,21 +4,24 @@ EN: Moodle testpage parser and formatter. These things are for local use, but so
 RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Moodle). Ориентирован на студентов ВГМУ и позволяет извлекать тесты и ответы на них из HTML-страниц сайтов e-vsmu.by и do.vsmu.by. Приятные возможности:
 
 * тесты можно вывести в человекочитаемом формате для печати, в том числе в сокращённом виде для шпаргалки
-* тесты можно импортировать в [Anki](http://ankisrs.net) и [MyTestX](http://mytest.klyaksa.net), чтобы проходить тестирование с обучением offline
+* тесты можно импортировать в [Anki](http://ankisrs.net) и [MyTestX](http://mytest.klyaksa.net) ([пример](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/mytestx/quiz_unsorted_duplicates.txt)), чтобы проходить тестирование с обучением offline
 
 **У программы нет графического интерфейса.** Её цель - облегчить жизнь опытным пользователям.
 
 
 ## Установка
 
-* [Python 2](https://www.python.org/downloads/windows/)
+* [Python 2.7](https://www.python.org/downloads/windows/)
 * lxml2 вместе с cssselect, бинарники под MS Windows можно скачать [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
 
 
 ## Использование
 
 ### Получение тестов
+
 Необходимо пройти тест на произвольное количество баллов и сохранить страницу с результатами в файл с расширением `*.htm` (Файл > Сохранить как..., 'Веб-страница, только HTML'). Чтобы отобразить все результаты тестирования Moodle на одной странице, следует добавить к ссылке на страницу с ответами параметр `showall=true`: e-vsmu.by/mod/quiz/review.php?attempt=111111&showall=true
+
+Если HTML-страница не содержит информации о правильных ответах, все варианты будут помечены как неверные.
 
 ### Работа с программой
 
@@ -76,8 +79,6 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 
 ## Желаемый функционал
 
-* Парсинг формата MyTextX
-* Глубокая проверка на дубликаты
 * Группировка тестов по количеству правильных ответов
 * В скольки тестах "всё верно" является правильным ответом
 * В скольки тестах самый длинный ответ является правильным ответом

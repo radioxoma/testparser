@@ -386,7 +386,7 @@ def main(args):
     # Define test source & parse to Question class instances
     tests = list()
     for filename in args.input:
-        if args.target == "evsm":
+        if args.target == "evsmu":
             test_part = parse_evsmu(filename, correct_presented=args.na)
         elif args.target == "do":
             test_part = parse_do(filename, correct_presented=args.na)
