@@ -167,6 +167,19 @@ def min_diff(strlist):
     return questions[::-1]
 
 
+def duplicates(tests):
+    """Return question duplicates.
+    """
+    dup = set()
+    seen = set()
+    for q in tests:
+        if q in seen:
+            dup.add(q)
+        else:
+            seen.add(q)
+    return dup
+
+
 def parse_do(filename, correct_presented=True):
     """do.vsmu.by Moodle tests parser.
 
@@ -401,6 +414,10 @@ def main(args):
         nofiltered = len(tests)
         tests = list(set(tests))
         print('{} / {} unique tests'.format(len(tests), nofiltered))
+    if args.duplicates:
+        dup = duplicates(tests)
+        print('{} duplicates'.format(len(dup)))
+        print('\n'.join([unicode(k) for k in dup]))
 
     # Sorting important for crib shortener!
     tests.sort(key=lambda q: q.question.lower())
@@ -429,7 +446,8 @@ if __name__ == '__main__':
     parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove equal tests.")
+    parser.add_argument("-u", "--unify", action='store_true', help="Remove equal tests. Case-sensitive.")
+    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
     parser.add_argument("--to-anki", help="Save to tab-formatted text file for import in Anki cards http://ankisrs.net")
