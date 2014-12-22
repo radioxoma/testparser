@@ -216,7 +216,7 @@ def parse_do(filename, correct_presented=True):
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
         if correct_presented:
             if len(test_choices) != len(correct):
-                print(Q)
+                print(unicode(Q))
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers are not provided by test page, use `--na` option.")
@@ -302,10 +302,11 @@ def parse_evsmu(filename, correct_presented=True):
         Q = Question(' '.join(textQuestion.split()))
         ## Answers
         correct = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
-        answers = clear(test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/text()'))
+        answ_divs = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div')
+        answers = [a.text_content().strip()[3:] for a in answ_divs]
         if correct_presented:
             if len(answers) != len(correct):
-                print(Q)
+                print(unicode(Q))
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers is not provided by test page, use `--na` option.")
@@ -420,7 +421,7 @@ def main(args):
         print('\n'.join([unicode(k) for k in dup]))
 
     # Sorting important for crib shortener!
-    tests.sort(key=lambda q: q.question.lower())
+    tests.sort(key=lambda q: str(q).lower())
 
     # Output
     if args.p:

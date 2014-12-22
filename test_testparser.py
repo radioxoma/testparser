@@ -22,7 +22,13 @@ class TestEvsmu(unittest.TestCase):
 
     def test_evsmu_to_mytestx_output(self):
         with io.open('tests/evsmu/g495_mytestx.txt', encoding='cp1251') as f:
-            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_evsmu))
+            for a, b in zip(f.read().split(), testparser.to_mytestx(self.quiz_evsmu).split()):
+                try:
+                    self.assertEqual(a, b)
+                except:
+                    print(a)
+                    print(b)
+                    raise
 
     def test_evsmu_to_anki_output(self):
         with io.open('tests/evsmu/g495_anki.csv', encoding='utf-8') as f:
