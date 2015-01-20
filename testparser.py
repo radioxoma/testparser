@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
@@ -17,13 +17,19 @@ images are not supported.
     Atque irrisores.
 """
 
-import os
 import io
 import re
-import itertools
+import sys
 import argparse
 from collections import OrderedDict
-from operator import attrgetter
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+try:
+    import itertools.ifilter as filter
+except ImportError:
+    pass
 import lxml.html
 
 
@@ -70,6 +76,11 @@ class Question(object):
                 correct.append(v)
         return correct
 
+    def to_string(self):
+        """Unicode text representation.
+        """
+        return self.__unicode__()
+
     def __unicode__(self):
         """Formatted representation in human-readable format (MyTextX style).
 
@@ -92,15 +103,15 @@ class Question(object):
         return info
 
     def __str__(self):
-        data = self.__unicode__().encode('utf-8')
         # Python3 compatibility
-        if isinstance(data, str):
-            return data
-        else:
+        if sys.version_info.major > 2:
             return self.__unicode__()
+        else:
+            return self.__unicode__().encode('utf-8')
 
     def __hash__(self):
-        return hash((self.question, self.image_path,
+        return hash((
+            self.question, self.image_path,
             tuple(sorted(self.answers.items()))))
 
     def __eq__(self, other):
@@ -122,7 +133,7 @@ def clear(strlist):
     >>> clear(['123', '12', '', '2', '1', ''])
     ['123', '12', '2', '1']
     """
-    return filter(None, map(lambda x: x.strip(), strlist))
+    return list(filter(None, map(lambda x: x.strip(), strlist)))
 
 
 def short(text, count_stripped=False):
@@ -216,11 +227,11 @@ def parse_do(filename, correct_presented=True):
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
         if correct_presented:
             if len(test_choices) != len(correct):
-                print(unicode(Q))
+                print(Q.to_string())
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers are not provided by test page, use `--na` option.")
-        for C, A in itertools.izip_longest(correct, test_choices):
+        for C, A in zip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
                 if C.attrib['alt'] == 'Верно':
@@ -306,11 +317,11 @@ def parse_evsmu(filename, correct_presented=True):
         answers = [a.text_content().strip()[3:] for a in answ_divs]
         if correct_presented:
             if len(answers) != len(correct):
-                print(unicode(Q))
+                print(Q.to_string())
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers is not provided by test page, use `--na` option.")
-        for C, A in itertools.izip_longest(correct, answers):
+        for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
                 if C.attrib['alt'] == 'Верно':
@@ -353,7 +364,7 @@ def parse_mytestx(filename):
 def to_mytestx(tests):
     """Export to MyTestX format; fine for printing.
     """
-    out = '\n'.join([unicode(k) for k in tests])
+    out = '\n'.join([k.to_string() for k in tests])
     out = out.replace('α', 'альфа')
     out = out.replace('β', 'бета')
     out = out.replace('γ', 'гамма')
@@ -384,7 +395,7 @@ def to_anki(tests):
 def to_crib(tests):
     """Shorten tests for crib.
     """
-    questions = min_diff(map(attrgetter('question'), tests))
+    questions = min_diff([t.question for t in tests])
     result = list()
     for question, test in zip(questions, tests):
         result.append(
@@ -418,14 +429,14 @@ def main(args):
     if args.duplicates:
         dup = duplicates(tests)
         print('{} duplicates'.format(len(dup)))
-        print('\n'.join([unicode(k) for k in dup]))
+        print('\n'.join([k.to_string() for k in dup]))
 
     # Sorting important for crib shortener!
-    tests.sort(key=lambda q: str(q).lower())
+    tests.sort(key=lambda q: q.to_string().lower())
 
     # Output
     if args.p:
-        print('\n'.join([unicode(k) for k in tests]))
+        print('\n'.join([k.to_string() for k in tests]))
     if args.to_mytestx:
         with io.open(args.to_mytestx, mode='w', encoding='cp1251',
             errors='ignore', newline='\r\n') as f:
