@@ -12,7 +12,7 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 ## Установка
 
 * [Python 2 или 3](https://www.python.org/downloads/windows/)
-* lxml2 вместе с cssselect, бинарники под MS Windows можно скачать [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
+* lxml2, бинарники под MS Windows можно скачать [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
 
 
 ## Использование

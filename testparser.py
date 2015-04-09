@@ -206,7 +206,7 @@ def parse_do(filename, correct_presented=True):
     doc = lxml.html.parse(filename).getroot()
     questions = list()
 
-    multichoice = doc.find_class('que multichoice clearfix')
+    multichoice = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in multichoice:
         test_question = ' '.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
         Q = Question(test_question)
@@ -243,7 +243,7 @@ def parse_do(filename, correct_presented=True):
         questions.append(Q)
 
     ###########################################################################
-    multianswer = doc.find_class('que multianswer clearfix')
+    multianswer = doc.xpath(".//div[@class='que multianswer clearfix']")
     for test in multianswer:
         raise NotImplementedError("No export. Testing needed.")
         # Название теста
@@ -274,7 +274,7 @@ def parse_do(filename, correct_presented=True):
         print('')
 
     ###########################################################################
-    match = doc.find_class('que match clearfix')
+    match = doc.xpath(".//div[@class='que match clearfix']")
     for test in match:
         raise NotImplementedError("Testing needed")
         # Название теста
@@ -305,7 +305,7 @@ def parse_evsmu(filename, correct_presented=True):
     doc = lxml.html.parse(filename).getroot()
 
     questions = list()
-    content = doc.find_class('content')
+    content = doc.xpath(".//div[@class='content']")
     for test in content:
         ## Question
         qwe = test.xpath('child::div[attribute::class="qtext22"]')
