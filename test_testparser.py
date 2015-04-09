@@ -7,7 +7,8 @@ from __future__ import unicode_literals
 
 import io
 import unittest
-import testparser
+import imp
+testparser = imp.load_source('testparser', 'testparser')
 
 
 class TestEvsmu(unittest.TestCase):

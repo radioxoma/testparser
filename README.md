@@ -12,7 +12,7 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 ## Установка
 
 * [Python 2 или 3](https://www.python.org/downloads/windows/)
-* lxml2, бинарники под MS Windows можно скачать [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
+* lxml, бинарники под MS Windows можно скачать [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml).
 
 
 ## Использование
@@ -29,17 +29,17 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 
 Вывести подробную справку по параметрам:
 
-    $ python testparser.py --help
+    $ python testparser --help
 
 *Пример 1.* Пропарсить сохранённую браузером страницу с сайта e-vsmu.by и сохранить результат в файл `mytestx.txt`. Его можно читать и печатать; тесты отсортированы по тексту вопроса в алфавитном порядке. Программа выводит сообщение о количестве найденных тестов.
 
-    $ python testparser.py evsmu 495gynecology.htm --to-mytestx mytestx.txt
+    $ python testparser evsmu 495gynecology.htm --to-mytestx mytestx.txt
     495 questions total
 
 
 *Пример 2.* Объединить несколько страниц тестов с сайта e-vsmu.by, удалить дубликаты и сохранить результат в файл `out.txt`.
 
-    $ python testparser.py evsmu test1.htm test_second.htm etc.htm -u --to-mytestx out.txt
+    $ python testparser evsmu test1.htm test_second.htm etc.htm -u --to-mytestx out.txt
 
 
 ### Импорт в сторонние программы
