@@ -21,6 +21,7 @@ import io
 import re
 import sys
 import argparse
+import textwrap
 from collections import OrderedDict
 try:
     from itertools import zip_longest
@@ -305,22 +306,27 @@ def parse_evsmu(filename, correct_presented=True):
     doc = lxml.html.parse(filename).getroot()
 
     questions = list()
-    content = doc.xpath(".//div[@class='content']")
+    content = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in content:
         ## Question
-        qwe = test.xpath('child::div[attribute::class="qtext22"]')
+        qwe = test.xpath('.//div[@class="qtext22"]')
         textQuestion = qwe[0].text_content().strip()
         Q = Question(' '.join(textQuestion.split()))
         ## Answers
-        correct = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
-        answ_divs = test.xpath('child::div[attribute::class="ablock clearfix"]/table/tr/td/label/div')
+        correct = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
+        answ_divs = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div')
         answers = [a.text_content().strip()[3:] for a in answ_divs]
         if correct_presented:
             if len(answers) != len(correct):
-                print(Q.to_string())
-                raise ValueError(
-                    "Number of variants does not match with number of correct answers.\n"
-                    "If correct answers is not provided by test page, use `--na` option.")
+                errmsg = textwrap.dedent("""\
+                    Number of variants does not match with number of correct answers.
+                    * If correct answers are not provided by test page, use `--na` argument.
+                    * If the question contains some bad formatted symbols like '<' or '>', replace it with &lt; &gt; equivalents or usual text.
+
+                    Question which had raised the error:
+                    {}""")
+                print(errmsg.format(Q.to_string()))
+                quit()
         for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
@@ -331,6 +337,10 @@ def parse_evsmu(filename, correct_presented=True):
             else:
                 Q.add_one_answer(A, '-')
         questions.append(Q)
+    # These questions don't contain correct answers, so we skip them
+    content = doc.xpath(".//div[@class='que match clearfix']")
+    if content:
+        print("Warning: {} 'que match clearfix' tests couldn't be parsed.".format(len(content)))
     return questions
 
 
@@ -413,7 +423,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
-    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers.")
+    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it if joining multiple HTML files.")
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
@@ -432,7 +442,7 @@ def main():
             test_part = parse_mytestx(filename)
         tests.extend(test_part)
 
-    print("{} questions total".format(len(tests)))
+    print("{} questions parsed".format(len(tests)))
 
     # Questions filtering
     if args.unify:
