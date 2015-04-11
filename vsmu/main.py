@@ -405,9 +405,22 @@ def to_crib(tests):
     return "\n".join(result)
 
 
-def main(args):
+def main():
     """Define parser, collect questions.
     """
+    parser = argparse.ArgumentParser(
+        description=__description__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
+    parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
+    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers.")
+    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it if joining multiple HTML files.")
+    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
+    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
+    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
+    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
+    parser.add_argument("--to-crib", help="Save as shortened cheat sheet text.")
+    args = parser.parse_args()
     # Define test source & parse to Question class instances
     tests = list()
     for filename in args.input:
@@ -452,17 +465,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description=__description__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
-    parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
-    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it if joining multiple HTML files.")
-    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
-    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
-    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
-    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
-    parser.add_argument("--to-crib", help="Save as shortened cheat sheet text.")
-    args = parser.parse_args()
-    main(args)
+    main()
