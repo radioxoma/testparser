@@ -3,8 +3,10 @@ EN: Moodle testpage parser and formatter. These things are for local use, but so
 
 RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Moodle). Ориентирован на студентов ВГМУ и позволяет извлекать тесты и ответы на них из HTML-страниц сайтов e-vsmu.by и do.vsmu.by. Приятные возможности:
 
-* тесты можно вывести в человекочитаемом формате для печати, в том числе в сокращённом виде для шпаргалки
-* тесты можно импортировать в [Anki](http://ankisrs.net) и [MyTestX](http://mytest.klyaksa.net) ([пример](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/mytestx/quiz_unsorted_duplicates.txt)), чтобы проходить тестирование с обучением offline
+* тесты можно вывести в человекочитаемом формате для печати, в том числе в сокращённом виде для шпаргалки.
+* тесты можно импортировать в [Anki](http://ankisrs.net) и [MyTestX](http://mytest.klyaksa.net), чтобы проходить тестирование с обучением offline.
+ 
+**Примеры результатов**: для [Anki](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_anki.csv), для [MyTestX](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_mytestx.txt) (человекочитаемый), для [шпаргалки](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_crib.txt).
 
 **У программы нет графического интерфейса.** Её цель - облегчить жизнь опытным пользователям.
 
@@ -16,9 +18,9 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 * Установите [Python 3](https://www.python.org/downloads/). В мастере установки на этапе "Customize Python" убедитесь, что пункты "pip" и "Add python.exe to Path" выбраны.
 * Откройте консоль (нажмите Win+R, введите `cmd`) и выполните команды:
 
-> В идеальном мире можно было бы выполнить команду `pip install lxml` и вспомогательная библиотека скачалась и установилась бы автоматически, но разработчики не предоставляют бинарных сборок. Скачайте `lxml‑3.4.4‑cp34‑none‑win32.whl` [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml) (cp34 означает CPython версии 3.4, который вы скачали ранее, win32 означает 32-х битную Windows).
+> В идеальном мире можно было бы выполнить команду `pip install lxml` и вспомогательная библиотека скачалась и установилась бы автоматически, но её разработчики пока не предоставляют бинарных сборок.
 
-Укажите собственный путь к файлу который вы скачали.
+Скачайте `lxml‑3.4.4‑cp34‑none‑win32.whl` [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml) (cp34 означает CPython версии 3.4, который вы скачали ранее, win32 означает 32-х битную Windows). Укажите собственный путь к файлу который вы скачали.
 
     pip install "C:\Users\Vasya\Downloads\lxml-3.4.4-cp34-none-win32.whl"
 
