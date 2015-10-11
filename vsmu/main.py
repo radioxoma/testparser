@@ -368,7 +368,44 @@ def parse_mytestx(filename):
             elif line.startswith("-"):
                 Q.add_one_answer(line[1:].strip(), "-")
         questions.append(Q)
-        return questions
+    return questions
+
+
+def parse_raw(filename):
+    """Read text from human-written format.
+
+    1. Question:
+    -1. answer
+    -2. answer
+    +3. etc
+    """
+    ptn_question = re.compile("(^\d+[\ |\.]\ *)(.*)")
+    ptn__answer = re.compile("(^[\-\+]+\d\.*\s*)(.*)")
+    Q = None
+    questions = list()
+    with io.open(filename, mode='r', encoding='utf-8') as f:
+        for str_num, line in enumerate(f, start=1):
+            if line.isspace():
+                continue  # Skip empty string
+
+            elif line[0].isdigit():
+                if Q is not None:
+                    questions.append(Q)
+                Q = Question(re.search(ptn_question, line).group(2))
+            elif line.startswith("+"):
+                Q.add_one_answer(re.search(ptn__answer, line).group(2), "+")
+            elif line.startswith("-"):
+                Q.add_one_answer(re.search(ptn__answer, line).group(2), "-")
+            else:
+                errmsg = textwrap.dedent("""\
+                    Input file syntax error - please check for unusual symbols
+                    (not a space, digit, '-', '+') at the beginning of the
+                    string {} in the input file.""".format(str_num))
+                raise ValueError(errmsg)
+
+        if Q is not None:
+            questions.append(Q)
+    return questions
 
 
 def to_mytestx(tests):
@@ -421,7 +458,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx'), help="Parse e-vsmu.by or do.vsmu.by tests")
+    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it if joining multiple HTML files.")
@@ -440,6 +477,8 @@ def main():
             test_part = parse_do(filename, correct_presented=args.na)
         elif args.target == "mytestx":
             test_part = parse_mytestx(filename)
+        elif args.target == "raw":
+            test_part = parse_raw(filename)
         tests.extend(test_part)
 
     print("{} questions parsed".format(len(tests)))
