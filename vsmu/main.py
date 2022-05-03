@@ -47,7 +47,7 @@ class Question(object):
         """Add bunch of answer-corect_or_none pairs.
 
         :param list variants: An test variant
-        :param list correct: '+' or '-'
+        :param bool correct:
         """
         assert(isinstance(variants, list) and isinstance(correct, list))
         for v, c in zip(variants, correct):
@@ -57,7 +57,7 @@ class Question(object):
         """Add one answer-corect_or_none pair.
 
         :param unicode variants: An answer
-        :param unicode correct: '+' or '-'
+        :param bool correct:
         """
         self.answers[variant] = correct
 
@@ -73,7 +73,7 @@ class Question(object):
         """
         correct = list()
         for v, c in self.answers.items():
-            if c == '+':
+            if c:
                 correct.append(v)
         return correct
 
@@ -100,7 +100,7 @@ class Question(object):
         if self.image_path:
             info += '@ {}\n'.format(self.image_path)
         for v, c in self.answers.items():
-            info += '{} {}\n'.format(c, v)
+            info += '{} {}\n'.format('+' if c else '-', v)
         return info
 
     def __str__(self):
@@ -235,12 +235,9 @@ def parse_do(filename, correct_presented=True):
         for C, A in zip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                if C.attrib['alt'] == 'Верно':
-                    Q.add_one_answer(A, '+')
-                else:
-                    Q.add_one_answer(A, '-')
+                Q.add_one_answer(A, C.attrib['alt'] == 'Верно')
             else:
-                Q.add_one_answer(A, '-')
+                Q.add_one_answer(A, False)
         questions.append(Q)
 
     ###########################################################################
@@ -330,12 +327,9 @@ def parse_evsmu(filename, correct_presented=True):
         for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                if C.attrib['alt'] == 'Верно':
-                    Q.add_one_answer(A, '+')
-                else:
-                    Q.add_one_answer(A, '-')
+                Q.add_one_answer(A, C.attrib['alt'] == 'Верно')
             else:
-                Q.add_one_answer(A, '-')
+                Q.add_one_answer(A, False)
         questions.append(Q)
     # These questions don't contain correct answers, so we skip them
     content = doc.xpath(".//div[@class='que match clearfix']")
@@ -364,9 +358,9 @@ def parse_mytestx(filename):
             elif line.startswith("@"):
                 Q.add_image_path(line[1:].strip())
             elif line.startswith("+"):
-                Q.add_one_answer(line[1:].strip(), "+")
+                Q.add_one_answer(line[1:].strip(), True)
             elif line.startswith("-"):
-                Q.add_one_answer(line[1:].strip(), "-")
+                Q.add_one_answer(line[1:].strip(), False)
         questions.append(Q)
     return questions
 
@@ -393,9 +387,9 @@ def parse_raw(filename):
                     questions.append(Q)
                 Q = Question(re.search(ptn_question, line).group(2))
             elif line.startswith("+"):
-                Q.add_one_answer(re.search(ptn__answer, line).group(2), "+")
+                Q.add_one_answer(re.search(ptn__answer, line).group(2), True)
             elif line.startswith("-"):
-                Q.add_one_answer(re.search(ptn__answer, line).group(2), "-")
+                Q.add_one_answer(re.search(ptn__answer, line).group(2), False)
             else:
                 errmsg = textwrap.dedent("""\
                     Input file syntax error - please check for unusual symbols
@@ -405,6 +399,33 @@ def parse_raw(filename):
 
         if Q is not None:
             questions.append(Q)
+    return questions
+
+
+def parse_raw2(filename):
+    """Формат в которм ответ указан после вопроса.
+
+    4 При ОРДС в основе нарушения газообмена в легких лежит:
+    Г
+    А. Снижение ФОЕ
+    Б. Рост мертвого пространства
+    В. Нарушение элиминации СО2
+    Г. Внутрилегочное шунтирование крови
+    Д. Нарушение утилизации кислорода в тканях
+    """
+    pattern = re.compile(r"^(\d+)\ +(.+?)\n(^\D)\n((?:.+\n)+)", flags=re.MULTILINE)
+
+    with open(filename) as f:
+        text = f.read()
+
+    questions = list()
+    for match in re.finditer(pattern, text):
+        Q = Question(match.group(2).strip())
+        valid = match.group(3).strip()
+        choises = match.group(4).strip().split('\n')
+        for choise in choises:
+            Q.add_one_answer(choise, valid == choise[0])
+        questions.append(Q)
     return questions
 
 
@@ -427,7 +448,7 @@ def to_anki(tests):
         cor_answ = '<div style="text-align:left">'
         for n, (v, c) in enumerate(q.answers.items(), 1):
             all_answ += '{}. {}<br>'.format(n, v)
-            if c == '+':
+            if c:
                 # html ol li wasn't used to allow usage of arbitrary
                 # answer number in correct answers list.
                 cor_answ += '{}. {}<br>'.format(n, v)
@@ -458,7 +479,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
+    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw', 'raw2'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it if joining multiple HTML files.")
@@ -479,6 +500,8 @@ def main():
             test_part = parse_mytestx(filename)
         elif args.target == "raw":
             test_part = parse_raw(filename)
+        elif args.target == "raw2":
+            test_part = parse_raw2(filename)
         tests.extend(test_part)
 
     print("{} questions parsed".format(len(tests)))
