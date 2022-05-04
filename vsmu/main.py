@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 
 __description__ = """\
 Parser for e-vsmu.by and do.vsmu.by Moodle HTML test pages. Mediafiles like
@@ -22,6 +16,7 @@ import re
 import sys
 import argparse
 import textwrap
+import warnings
 from collections import OrderedDict
 try:
     from itertools import zip_longest
@@ -414,6 +409,7 @@ def parse_raw2(filename):
     Д. Нарушение утилизации кислорода в тканях
     """
     pattern = re.compile(r"^(\d+)\ +(.+?)\n(^\D)\n((?:.+\n)+)", flags=re.MULTILINE)
+    letters = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
     with open(filename) as f:
         text = f.read()
@@ -422,9 +418,13 @@ def parse_raw2(filename):
     for match in re.finditer(pattern, text):
         Q = Question(match.group(2).strip())
         valid = match.group(3).strip()
-        choises = match.group(4).strip().split('\n')
-        for choise in choises:
-            Q.add_one_answer(choise, valid == choise[0])
+        choices = match.group(4).strip().split('\n')
+        for letter, choice in zip(letters, choices):
+            # Catch missing choices by АБВГДЕ increment at string beginning
+            if not letter == choice[0]:
+                # raise ValueError(f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'")
+                warnings.warn(f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'")
+            Q.add_one_answer(choice, valid == choice[0])
         questions.append(Q)
     return questions
 
