@@ -1,0 +1,29 @@
+1. Question:
+-1. 1 answer
+-2. 2 answer
++3. valid
+
+1. Question:
+-A. 1 answer
+-B. 2 answer
++C. valid
+
+1. Question:
+A. 1 answer
+B. 2 answer
++C. valid
+
+1. Question:
+-1) 1 answer
+-2) 2 answer
++3) valid
+
+1. Question:
+-A) 1 answer
+-B) 2 answer
++C) valid
+
+1. Question:
+A) 1 answer
+B) 2 answer
++C) valid

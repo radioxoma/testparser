@@ -364,41 +364,42 @@ def parse_mytestx(filename):
                 Q.add_one_answer(line[1:].strip(), True)
             elif line.startswith("-"):
                 Q.add_one_answer(line[1:].strip(), False)
-        questions.append(Q)
+        if Q is not None:
+            questions.append(Q)
     return questions
 
 
 def parse_raw(filename):
     """Read text from human-written format.
 
+    Question starts with number with dot.
+    Answers must have plus sign for valid and separator '.' or ')'.
+
     1. Question:
     -1. answer
-    -2. answer
+    2. answer
     +3. etc
     """
-    ptn_question = re.compile("(^\d+[\ |\.]\ *)(.*)")
-    ptn__answer = re.compile("(^[\-\+]+\d\.*\s*)(.*)")
+    ptn_question = re.compile(r"^(\d+\.\s*)(.*)")
+    ptn_answer = re.compile(r"^(.*?(?:\.|\))\s*)(.*)")
     Q = None
     questions = list()
     with io.open(filename, mode='r', encoding='utf-8') as f:
-        for str_num, line in enumerate(f, start=1):
-            if line.isspace():
-                continue  # Skip empty string
-
-            elif line[0].isdigit():
-                if Q is not None:
-                    questions.append(Q)
-                Q = Question(re.search(ptn_question, line).group(2))
-            elif line.startswith("+"):
-                Q.add_one_answer(re.search(ptn__answer, line).group(2), True)
-            elif line.startswith("-"):
-                Q.add_one_answer(re.search(ptn__answer, line).group(2), False)
-            else:
-                errmsg = textwrap.dedent("""\
-                    Input file syntax error - please check for unusual symbols
-                    (not a space, digit, '-', '+') at the beginning of the
-                    string {} in the input file.""".format(str_num))
-                raise ValueError(errmsg)
+        for line in f:
+            try:
+                if line.isspace():
+                    continue
+                elif line[0].isdigit():
+                    if Q is not None:
+                        questions.append(Q)
+                    Q = Question(re.search(ptn_question, line).group(2))
+                elif line.startswith('+'):
+                    Q.add_one_answer(re.search(ptn_answer, line).group(2), True)
+                else:
+                    Q.add_one_answer(re.search(ptn_answer, line).group(2), False)
+            except:
+                print(f"'{line}'")
+                raise
 
         if Q is not None:
             questions.append(Q)
@@ -438,7 +439,8 @@ def parse_raw2(filename):
             Q.add_one_answer(choice[3:], valid == choice[0])
         if not Q.correct():
             warnings.warn(f"No valid answer for a question '{match.group(0)}'")
-        questions.append(Q)
+        if Q is not None:
+            questions.append(Q)
     return questions
 
 
@@ -557,7 +559,7 @@ def main():
         print('{} / {} unique tests'.format(len(tests), nofiltered))
 
     dup = duplicates(tests)
-    print('{} duplicates'.format(len(dup)))
+    print('{} questions have duplicates'.format(len(dup)))
     if args.duplicates:
         print('\n'.join([k.to_string() for k in dup]))
 

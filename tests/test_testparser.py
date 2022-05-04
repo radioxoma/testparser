@@ -84,5 +84,13 @@ class TestMytestx(unittest.TestCase):
             self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_mytestx))
 
 
+class TestRaw(unittest.TestCase):
+    def setUp(self):
+        self.quiz = testparser.parse_raw(os.path.join(curdir, "raw/raw.txt"))
+
+    def test_to_mytestx_output(self):
+        with io.open(os.path.join(curdir, 'raw/raw.mytestx.txt'), encoding='cp1251') as f:
+            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz))
+
 if __name__ == '__main__':
     unittest.main()
