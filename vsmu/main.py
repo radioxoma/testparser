@@ -17,6 +17,7 @@ import sys
 import argparse
 import textwrap
 import warnings
+import zipfile
 from collections import OrderedDict
 try:
     from itertools import zip_longest
@@ -26,6 +27,7 @@ try:
     import itertools.ifilter as filter
 except ImportError:
     pass
+import xml.etree.ElementTree as etree
 import lxml.html
 
 
@@ -440,6 +442,32 @@ def parse_raw2(filename):
     return questions
 
 
+def parse_geetest_epub(filename):
+    """https://geetest.ru/ parser.
+
+    Currently XML export is broken, so parsing epub instead.
+    """
+    zcontent = zipfile.ZipFile(filename)
+    xhtml = zcontent.read("OEBPS/0.html")
+    tree = etree.fromstring(xhtml)
+
+    strip_num = re.compile(r"^\d+\.\s*")
+    Q = None
+    questions = list()
+    for p in tree[1]:
+        if p.attrib:
+            if p.attrib['class'] == 'question':
+                if Q is not None:
+                    questions.append(Q)
+                Q = Question(re.sub(strip_num, "", p.text))
+            elif p.attrib['class'] == 'false':
+                Q.add_one_answer(p.text[7:], False)
+            elif p.attrib['class'] == '':
+                Q.add_one_answer(p.text[7:], True)
+    questions.append(Q)
+    return questions
+
+
 def to_mytestx(tests):
     """Export to MyTestX format; fine for printing.
     """
@@ -490,7 +518,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw', 'raw2'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
+    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw', 'raw2', 'geetest'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
     parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it when joining multiple HTML files.")
@@ -514,6 +542,8 @@ def main():
             test_part = parse_raw(filename)
         elif args.target == "raw2":
             test_part = parse_raw2(filename)
+        elif args.target == "geetest":
+            test_part = parse_geetest_epub(filename)
         tests.extend(test_part)
 
     print("{} questions parsed".format(len(tests)))
