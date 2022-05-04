@@ -13,20 +13,12 @@ images are not supported.
 
 import io
 import re
-import sys
 import argparse
 import textwrap
 import warnings
 import zipfile
 from collections import OrderedDict
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
-try:
-    import itertools.ifilter as filter
-except ImportError:
-    pass
+from itertools import zip_longest
 import xml.etree.ElementTree as etree
 import lxml.html
 
@@ -46,6 +38,7 @@ class Question(object):
         :param unicode variants: An answer
         :param bool correct:
         """
+        assert isinstance(variant, str)
         assert isinstance(correct, bool)
         if variant in self.answers:
             warnings.warn(f"Question already have this choice: '{self.question}'")
@@ -60,8 +53,9 @@ class Question(object):
         :param list variants: An test variant
         :param bool correct:
         """
-        assert(isinstance(variants, list) and isinstance(correct, list))
-        for v, c in zip(variants, correct):
+        assert isinstance(variants, list) and isinstance(correct, list)
+        assert len(variants) >= len(correct)
+        for v, c in zip_longest(variants, correct, fillvalue=False):
             self.add_one_answer(v, c)
 
     def add_image_path(self, im_path):
@@ -80,12 +74,7 @@ class Question(object):
                 correct.append(v)
         return correct
 
-    def to_string(self):
-        """Unicode text representation.
-        """
-        return self.__unicode__()
-
-    def __unicode__(self):
+    def __str__(self):
         """Formatted representation in human-readable format (MyTextX style).
 
         There are general functions for exporting quiz in specific formats
@@ -105,13 +94,6 @@ class Question(object):
         for v, c in self.answers.items():
             info += '{} {}\n'.format('+' if c else '-', v)
         return info
-
-    def __str__(self):
-        # Python3 compatibility
-        if sys.version_info.major > 2:
-            return self.__unicode__()
-        else:
-            return self.__unicode__().encode('utf-8')
 
     def __hash__(self):
         return hash((
@@ -231,7 +213,7 @@ def parse_do(filename, correct_presented=True):
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
         if correct_presented:
             if len(test_choices) != len(correct):
-                print(Q.to_string())
+                print(Q)
                 raise ValueError(
                     "Number of variants does not match with number of correct answers.\n"
                     "If correct answers are not provided by test page, use `--na` option.")
@@ -325,7 +307,7 @@ def parse_evsmu(filename, correct_presented=True):
 
                     Question which had raised the error:
                     {}""")
-                print(errmsg.format(Q.to_string()))
+                print(errmsg.format(Q))
                 quit()
         for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
@@ -366,6 +348,91 @@ def parse_mytestx(filename):
                 Q.add_one_answer(line[1:].strip(), False)
         if Q is not None:
             questions.append(Q)
+    return questions
+
+
+def parse_rmanpo(filename, export_crib=False):
+    """Reformat original RMANPO ICU test text 2019-03-12.
+
+    Ошибки форматирования (добавить символ '@' в конце):
+        35 Осложнениями при пункции левой подключичной вены могут быть:
+        69 Клиническими симптомами изотонической дегидратации являются:
+        876 При пароксизмальной предсердной тахикардии показано применение
+    После последнего вопроса такде добавить знак '@', чтобы уже мой парсер сработал
+
+    NB! Здесь есть неиспользуемые разделы ("Раздел 2.Топографическая анатомия и оперативная хирургия"), решено усложнением regexp.
+        Раздел 1. Основы социальная гигиены и  организации 
+        Раздел 2. Топографическая анатомия и оперативная хирургия
+        Раздел 3. Клиническая физиология и биохимия
+        Раздел 5. Клиническая фармакология
+        Раздел 5. ОБЩАЯ АНЕСТЕЗИОЛОГИЯ.
+        Раздел 01. Смежные дисциплины
+        Раздел 02. Общая анестезиология
+        Раздел 03. Частная анестезиология
+        Раздел 04. Реанимация и  интенсивная терапия
+
+    Странные ассоциативные ответы: А6,Б4,В5,Г6,Д2,Е1 выводятся как есть.
+    """
+    def rmsp(s):
+        """Replace multiple spaces with one.
+        """
+        return re.sub(r"\ +", " " , s)
+
+    # header_expr = re.compile("@([\d\.]+?)@([\d\.]+?)@([а-яА-Я,\d\ ]*?)@@(.+?)(?=@)", flags=re.DOTALL)
+    header_expr = re.compile(r"@([\d\.]+?)@([\d\.]+?)@([а-яА-Я,\d\ ]*?)@@(.+?)@(.+?)(?=@|\n\s*Раздел)", flags=re.DOTALL)
+    # Матрица ответов (кому это вообще в голову пришло?)
+    corr_matrix_bool = {
+        'а': [True, True, True],            # 1, 2 и 3
+        'б': [True, False, True],           # 1 и 3
+        'в': [False, True, False, True],    # 2 и 4
+        'г': [False, False, False, True],   # 4
+        'д': [True,]
+    }
+    corr_matrix = {
+        'а': '1, 2, 3',
+        'б': '1 и 3',
+        'в': '2 и 4',
+        'г': '4',
+        'д': '1,2,3,4,5 или 1,2,3,4'}
+
+    with open(filename, encoding='utf-8') as f:
+        raw_text = f.read()
+
+    questions = list()
+    questions_skipped = 0
+    concat = list()
+    for m in re.finditer(header_expr, raw_text):
+        corr = m.group(3).strip().lower()
+        question = rmsp(m.group(4).strip())
+        choices = rmsp(m.group(5).strip())
+        Q = Question(question)
+        try:
+            c = choices.split('\n')
+            a = corr_matrix_bool[corr]
+            if len(c) < len(a):
+                warnings.warn(f"Invalid question has more answers than choices, skipping '{m.group()}'")
+                questions_skipped += 1
+            else:
+                Q.add_multiple_answers(c, a)
+                questions.append(Q)
+        except KeyError:
+            questions_skipped += 1
+            warnings.warn(f"Unsupported question type with associative choices, skipping '{m.group()}'")
+
+        if export_crib:
+            out = "@{}@{} {}\n{}\n".format(m.group(1), m.group(2), question, choices)
+            if corr in corr_matrix:
+                out += "{}: {}".format(corr.upper(), corr_matrix[corr])
+            else:
+                out += corr
+            out += "\n"
+            concat.append(out)
+
+    if export_crib:
+        # There are some strange characters in text '\uf0d7', '\uf0b0'
+        with open('crib.txt', mode='w', encoding='utf-8', errors='ignore') as f:
+            f.write('\n'.join(concat))
+    print(f"parse_rmanpo had skipped {questions_skipped} questions")
     return questions
 
 
@@ -473,7 +540,7 @@ def parse_geetest_epub(filename):
 def to_mytestx(tests):
     """Export to MyTestX format; fine for printing.
     """
-    out = '\n'.join([k.to_string() for k in tests])
+    out = '\n'.join([str(k) for k in tests])
     out = out.replace('α', 'альфа')
     out = out.replace('β', 'бета')
     out = out.replace('γ', 'гамма')
@@ -520,7 +587,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('evsmu.htm', 'do.htm', 'mytestx.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
+    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive.")
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
@@ -539,6 +606,8 @@ def main():
             test_part = parse_do(filename, correct_presented=args.na)
         elif filename.endswith("mytestx.txt"):
             test_part = parse_mytestx(filename)
+        elif filename.endswith("rmanpo.txt"):
+            test_part = parse_rmanpo(filename)
         elif filename.endswith("raw.txt"):
             test_part = parse_raw(filename)
         elif filename.endswith("raw2.txt"):
@@ -561,15 +630,15 @@ def main():
     dup = duplicates(tests)
     print('{} questions have duplicates'.format(len(dup)))
     if args.duplicates:
-        print('\n'.join([k.to_string() for k in dup]))
+        print('\n'.join([str(k) for k in dup]))
 
     # Sorting important for a crib shortener!
     if args.sort or args.to_crib:
-        tests.sort(key=lambda q: q.to_string().lower())
+        tests.sort(key=lambda q: str(q).lower())
 
     # Output
     if args.p:
-        print('\n'.join([k.to_string() for k in tests]))
+        print('\n'.join([str(k) for k in tests]))
     if args.to_mytestx:
         with io.open(args.to_mytestx, mode='w', encoding='cp1251',
             errors='ignore', newline='\r\n') as f:
