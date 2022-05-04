@@ -518,10 +518,9 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('target', choices=('evsmu', 'do', 'mytestx', 'raw', 'raw2', 'geetest'), help="Parse e-vsmu.by, do.vsmu.by HTML; mytextx, raw tests")
-    parser.add_argument("input", nargs="+", help="An *.htm file (or files) for parsing. Multiple files will be concatenated.")
+    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('evsmu.htm', 'do.htm', 'mytestx.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive. Use it when joining multiple HTML files.")
+    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive.")
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
     parser.add_argument("-s", "--sort", action='store_true', help="Sort tests.")
@@ -529,21 +528,24 @@ def main():
     parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
     args = parser.parse_args()
-    # Define test source & parse to Question class instances
+
     tests = list()
     for filename in args.input:
-        if args.target == "evsmu":
+        if filename.endswith("evsmu.htm"):
             test_part = parse_evsmu(filename, correct_presented=args.na)
-        elif args.target == "do":
+        elif filename.endswith("do.htm"):
             test_part = parse_do(filename, correct_presented=args.na)
-        elif args.target == "mytestx":
+        elif filename.endswith("mytestx.txt"):
             test_part = parse_mytestx(filename)
-        elif args.target == "raw":
+        elif filename.endswith("raw.txt"):
             test_part = parse_raw(filename)
-        elif args.target == "raw2":
+        elif filename.endswith("raw2.txt"):
             test_part = parse_raw2(filename)
-        elif args.target == "geetest":
+        elif filename.endswith("geetest.epub"):
             test_part = parse_geetest_epub(filename)
+        else:
+            print(f"Unsupported filename extension {filename}")
+            continue
         tests.extend(test_part)
 
     print("{} questions parsed".format(len(tests)))
@@ -559,7 +561,7 @@ def main():
     if args.duplicates:
         print('\n'.join([k.to_string() for k in dup]))
 
-    # Sorting important for crib shortener!
+    # Sorting important for a crib shortener!
     if args.sort or args.to_crib:
         tests.sort(key=lambda q: q.to_string().lower())
 
