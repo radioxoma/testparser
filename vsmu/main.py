@@ -38,6 +38,20 @@ class Question(object):
         self.answers = OrderedDict()
         self.image_path = None
 
+    def add_one_answer(self, variant, correct):
+        """Add one answer-corect_or_none pair.
+
+        :param unicode variants: An answer
+        :param bool correct:
+        """
+        assert isinstance(correct, bool)
+        if variant in self.answers:
+            warnings.warn(f"Question already have this choice: '{self.question}'")
+            if self.answers[variant]:
+                warnings.warn(f"Duplicated choice marked as true previously, refuse to mark it as false: {self.question}")
+                return
+        self.answers[variant] = correct
+
     def add_multiple_answers(self, variants, correct):
         """Add bunch of answer-corect_or_none pairs.
 
@@ -46,15 +60,7 @@ class Question(object):
         """
         assert(isinstance(variants, list) and isinstance(correct, list))
         for v, c in zip(variants, correct):
-            self.answers[v] = c
-
-    def add_one_answer(self, variant, correct):
-        """Add one answer-corect_or_none pair.
-
-        :param unicode variants: An answer
-        :param bool correct:
-        """
-        self.answers[variant] = correct
+            self.add_one_answer(v, c)
 
     def add_image_path(self, im_path):
         """Add link to image file.
@@ -408,6 +414,8 @@ def parse_raw2(filename):
     Г. Внутрилегочное шунтирование крови
     Д. Нарушение утилизации кислорода в тканях
     """
+    # Stricter regexp for validation in text editor
+    # ^(\d+)\ +(.+?)\n(^\D)\n((?:^\D\..+\n)+)(?=\n)
     pattern = re.compile(r"^(\d+)\ +(.+?)\n(^\D)\n((?:.+\n)+)", flags=re.MULTILINE)
     letters = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
@@ -422,9 +430,12 @@ def parse_raw2(filename):
         for letter, choice in zip(letters, choices):
             # Catch missing choices by АБВГДЕ increment at string beginning
             if not letter == choice[0]:
-                # raise ValueError(f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'")
                 warnings.warn(f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'")
-            Q.add_one_answer(choice, valid == choice[0])
+            if not choice[1:].startswith('. '):
+                warnings.warn(f"Choice not begging with '<letter>. ' '{match.group(0)}'")
+            Q.add_one_answer(choice[3:], valid == choice[0])
+        if not Q.correct():
+            warnings.warn(f"No valid answer for a question '{match.group(0)}'")
         questions.append(Q)
     return questions
 
@@ -512,9 +523,10 @@ def main():
         nofiltered = len(tests)
         tests = list(set(tests))
         print('{} / {} unique tests'.format(len(tests), nofiltered))
+
+    dup = duplicates(tests)
+    print('{} duplicates'.format(len(dup)))
     if args.duplicates:
-        dup = duplicates(tests)
-        print('{} duplicates'.format(len(dup)))
         print('\n'.join([k.to_string() for k in dup]))
 
     # Sorting important for crib shortener!
