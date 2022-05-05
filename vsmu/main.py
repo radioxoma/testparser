@@ -96,9 +96,8 @@ class Question(object):
         return info
 
     def __hash__(self):
-        return hash((
-            self.question, self.image_path,
-            tuple(sorted(self.answers.items()))))
+        items = sorted([(k.lower(), v) for k, v in self.answers.items()])
+        return hash((self.question.lower(), self.image_path, tuple(items)))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -175,6 +174,46 @@ def duplicates(tests):
         else:
             seen.add(q)
     return dup
+
+
+def parse_gift(filename):
+    """Parse limited subset of Moodle gift format.
+
+    * Each choice on newline
+    * Remove integer at the beginning of the question
+
+    https://docs.moodle.org/400/en/GIFT_format
+
+    180. СУТОЧНАЯ ДОЗА ЛИДОКАИНА НЕ ДОЛЖНА ПРЕВЫШАТЬ:{
+    = 2000 мг
+    ~ 1500 мг
+    ~ 750 мг
+    ~ 500 мг
+    ~ 250 мг}
+    """
+
+    test = re.compile(r"^(\d+\.\s*)(.+?)(\{.+?\})", flags=re.MULTILINE | re.DOTALL)
+
+    # Parser ignores newlines and splits only at =/~
+    # Before =/~ must be space or newline (otherwise it split string in the middle)
+    # split_choiсes = re.compile(r"[\{\s](\~|\=)(.+?)(?=[\n\~\=\}])", flags=re.MULTILINE | re.DOTALL)
+
+    # Off spec parser - newlines not a part of the Moodle GIFT syntax
+    split_choiсes = re.compile(r"(\~|\=)(.+)[\n|\}]")
+
+    Q = None
+    questions = list()
+    with io.open(filename, mode='r', encoding='utf-8') as f:
+        for match in re.finditer(test, f.read()):
+            if Q is not None:
+                questions.append(Q)
+            Q = Question(match.group(2).strip())
+            for choice in re.finditer(split_choiсes, match.group(3)):
+                answer = choice.group(2).strip()
+                valid = choice.group(1).strip() == '='
+                Q.add_one_answer(answer, valid)
+        questions.append(Q)
+    return questions
 
 
 def parse_do(filename, correct_presented=True):
@@ -587,7 +626,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=__description__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
+    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive.")
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
@@ -600,7 +639,9 @@ def main():
 
     tests = list()
     for filename in args.input:
-        if filename.endswith("evsmu.htm"):
+        if filename.endswith("gift.txt"):
+            test_part = parse_gift(filename)
+        elif filename.endswith("evsmu.htm"):
             test_part = parse_evsmu(filename, correct_presented=args.na)
         elif filename.endswith("do.htm"):
             test_part = parse_do(filename, correct_presented=args.na)
