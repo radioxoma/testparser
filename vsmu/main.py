@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 
 __description__ = """\
-Parser for e-vsmu.by and do.vsmu.by Moodle HTML test pages. Mediafiles like
-images are not supported.
-
-    Pereat tristitia,
-    Pereant osores.
-    Pereat diabolus,
-    Quivis antiburschius
-    Atque irrisores.
+Test quiz parser and converter
 """
 
 import io
@@ -88,9 +81,9 @@ class Question(object):
             - Another false-marked answer
             *An empty string between tests.*
         """
-        info = '# {}\n'.format(self.question)
+        info = f"# {self.question}\n"
         if self.image_path:
-            info += '@ {}\n'.format(self.image_path)
+            info += "@ {self.image_path}\n"
         for v, c in self.answers.items():
             info += '{} {}\n'.format('+' if c else '-', v)
         return info
@@ -191,7 +184,6 @@ def parse_gift(filename):
     ~ 500 мг
     ~ 250 мг}
     """
-
     test = re.compile(r"^(\d+\.\s*)(.+?)(\{.+?\})", flags=re.MULTILINE | re.DOTALL)
 
     # Parser ignores newlines and splits only at =/~
@@ -587,22 +579,24 @@ def to_mytestx(tests):
 
 
 def to_anki(tests):
-    """Export to Anki http://ankisrs.net importable format.
+    """Export to Anki CSV (UTF-8, tab delimiter) format.
+
+    http://ankisrs.net
     """
     strlst = list()
     for q in tests:
         all_answ = '<div style="text-align:left">'
         cor_answ = '<div style="text-align:left">'
         for n, (v, c) in enumerate(q.answers.items(), 1):
-            all_answ += '{}. {}<br>'.format(n, v)
+            all_answ += f"{n}. {v}<br>"
             if c:
                 # html ol li wasn't used to allow usage of arbitrary
                 # answer number in correct answers list.
-                cor_answ += '{}. {}<br>'.format(n, v)
+                cor_answ += f'{n}. {v}<br>'
         all_answ += '</div>'
         cor_answ += '</div>'
         # Don't use trailing tab: it's needed only for tags.
-        strlst.append("{}<br>{}\t{}\n".format(q.question, all_answ, cor_answ))
+        strlst.append(f"{q.question}<br>{all_answ}\t{cor_answ}\n")
     out = ''.join(strlst)
     return out
 
@@ -630,7 +624,7 @@ def main():
     parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
     parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive.")
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
-    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT.")
+    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT in MyTestX format.")
     parser.add_argument("-s", "--sort", action='store_true', help="Sort tests.")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
     parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
@@ -660,16 +654,16 @@ def main():
             continue
         tests.extend(test_part)
 
-    print("{} questions parsed".format(len(tests)))
+    print(f"{len(tests)} questions parsed")
 
     # Questions filtering
     if args.unify:
         nofiltered = len(tests)
         tests = list(set(tests))
-        print('{} / {} unique tests'.format(len(tests), nofiltered))
+        print(f"{len(tests)} / {nofiltered} unique tests")
 
     dup = duplicates(tests)
-    print('{} questions have duplicates'.format(len(dup)))
+    print(f"{len(dup)} questions have duplicates")
     if args.duplicates:
         print('\n'.join([str(k) for k in dup]))
 
