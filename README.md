@@ -1,4 +1,3 @@
-## Вступление
 EN: Moodle testpage parser and formatter. These things are for local use, but some pieces of code can be useful for broader masses (e.g. simple quiz test export to [Anki](http://ankisrs.net)).
 
 RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Moodle). Ориентирован на студентов ВГМУ и позволяет извлекать тесты и ответы на них из HTML-страниц сайтов e-vsmu.by и do.vsmu.by. Приятные возможности:
@@ -8,68 +7,45 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
  
 **Примеры результатов**: для [Anki](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_anki.csv), для [MyTestX](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_mytestx.txt) (человекочитаемый), для [шпаргалки](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_crib.txt).
 
-**У программы нет графического интерфейса.** Её цель - облегчить жизнь опытным пользователям.
+
+## Installation
+
+    $ pip install https://github.com/radioxoma/vsmu-scripts/archive/master.zip
+    $ testparser --help
 
 
-## Установка
+## Usage
 
-Пример для 32-х битной Windows и python 3.4.3. Тем не менее, python 2 поддерживается, также вы можете использовать 32-битный python на 64-битной систме.
+General workflow:
 
-* Установите [Python 3](https://www.python.org/downloads/). В мастере установки на этапе "Customize Python" убедитесь, что пункты "pip" и "Add python.exe to Path" выбраны.
-* Откройте консоль (нажмите Win+R, введите `cmd`) и выполните команды:
+1. Acquiring tests from Moodle
+2. Parsing
+3. Exporting to another program like Anki
 
-> В идеальном мире можно было бы выполнить команду `pip install lxml` и вспомогательная библиотека скачалась и установилась бы автоматически, но её разработчики пока не предоставляют бинарных сборок.
+### Acquiring tests
 
-Скачайте `lxml‑3.4.4‑cp34‑none‑win32.whl` [здесь](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml) (cp34 означает CPython версии 3.4, который вы скачали ранее, win32 означает 32-х битную Windows). Укажите собственный путь к файлу который вы скачали.
-
-    pip install "C:\Users\Vasya\Downloads\lxml-3.4.4-cp34-none-win32.whl"
-
-Дальше проще. Парсер для тестов скачается и установится автоматически:
-    
-    pip install https://github.com/radioxoma/vsmu-scripts/archive/master.zip
-
-Программа установлена и доступна через командную строку под именем `testparser`.
-
-
-## Использование
-
-### Получение тестов
-
-Необходимо пройти тест на произвольное количество баллов и сохранить HTML-страницу с результатами в файл (для Firefox: *Файл > Сохранить как..., 'Веб-страница, только HTML'*). Чтобы отобразить все тесты на одной странице, следует нажать на соответствующую кнопку или добавить к ссылке на страницу с ответами параметр `&showall=true`, например:
+From Moodle: Необходимо пройти тест на произвольное количество баллов и сохранить HTML-страницу с результатами в файл (для Firefox: *Файл > Сохранить как..., 'Веб-страница, только HTML'*). Чтобы отобразить все тесты на одной странице, следует нажать на соответствующую кнопку или добавить к ссылке на страницу с ответами параметр `&showall=true`, например:
 
     http://e-vsmu.by/mod/quiz/review.php?attempt=111111&showall=true
 
 Если HTML-страница не содержит информации о правильных ответах, все варианты будут считаться неверными.
 
-### Работа с программой
+### Parsing
 
-> Программа не имеет графического интерфейса. Используйте консоль (нажмите Win+R, введите `cmd`).
+Program applies specific parser automatically by file extension, so user have to rename input files. Multiple files can be parsed at one run.
 
-Вывести подробную справку по параметрам:
-
-    testparser --help
-
-*Пример 1.* Пропарсить сохранённую браузером страницу с сайта e-vsmu.by и сохранить результат в файл `mytestx.txt`. Его можно читать и печатать; тесты отсортированы по тексту вопроса в алфавитном порядке. Программа выводит сообщение о количестве найденных тестов.
-
-    testparser evsmu 495gynecology.htm --to-mytestx mytestx.txt
-    495 questions total
+    testparser *evsmu.htm --to-mytestx mytestx.txt  # Filter evsmu html pages
+    testparser testdir/* --to-mytestx mytestx.txt  # Parse all tests in directory
 
 
-*Пример 2.* Объединить несколько страниц тестов с сайта e-vsmu.by, удалить дубликаты и сохранить результат в файл `out.txt`.
+### Export
 
-    testparser evsmu test1.htm test_second.htm etc.htm -u --to-mytestx out.txt
-
-
-### Импорт в сторонние программы
-
-Текст, полученный с ключом `--to-mytestx` пригоден для чтения человеком, а также импорта в формат программы MyTestX. Для этого используйте парсер *TextToMyTestX.exe* (ищите на сайте автора). Мне не удалось импортировать картинки таким путём.
-
-Текст, полученный с ключом `--to-anki` предназначен для импорта в Anki - программу для запоминания чего угодно. Просто откройте её, кликните *Файл > Импортировать* и обязательно поставьте галочку "*Разрешить использование HTML в полях*" (технически здесь HTML используется для выравнивания вопросов по левому краю). Никаких специфических настроек карточек самой Anki не требуется, используются стандартные поля "Вопрос" и "Ответ".
-
-Вызовите справку (ключ `--help`) для просмотра других опций.
+* `-p` print tests to stdout
+* `--to-mytestx` human-readable format (windows-1251, '\r' newlines) for russian program called "MyTestX". Use parser *TextToMyTestX.exe* from it's website.
+* `--to-anki` Install desktop [Anki](https://en.wikipedia.org/wiki/Anki_(software)) version, *File > Import* check "*Разрешить использование HTML в полях*" (HTML required for test alignment to left). Standard fields "Question" and "Answer" are used.
 
 
-### Известные проблемы
+### Known issues
 
 * В `--to-crib` появятся одинаковые строки, если существует несколько тестов с одинаковым вопросом и правильным ответом (неправильные ответы произвольные);
 * Неэкранированные символы `<` и `>` в тексте приводят к падению парсера. В качестве временного решения, их можно заменить на словесные эквиваленты или escape-последовательности;
@@ -77,19 +53,13 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
 * Нет поддержки иллюстраций.
 
 
-## Работа с исходными рукописными текстами
+## Command line tips
 
-*Раздел написан для исключительных ситуаций.*
-
-Пакетная конвертация множества документов (например *.doc) в plain text.
-
-    $ libreoffice --headless --convert-to txt:text ./* && cat ./*.txt > catall.txt && mkdir ./out && mv ./*.txt ./out
-
-Изменить кодировку на cp1251 (EOL.в стиле Unix).
-
+    $ libreoffice --headless --convert-to txt *  # Batch file conversion to plaintext with LibreOffice
+    $ pdftotext  # From package poppler-utils
     $ iconv -c -f utf-8 -t windows-1251 > win.txt
 
-### Регулярные выражения
+### Some sed magic from my wild youth
 
 Выделить текстовые блоки с заданным в `{}` числом строк, отделённые друг от друга хотя бы одной пустой строкой `(^.+?\n){7}`.
 Удалить двойные переносы строк `^$`.
@@ -112,7 +82,7 @@ RU: Парсер для тестов [Moodle](https://ru.wikipedia.org/wiki/Mood
     $ cat in.txt | sed -r -e "s/ {1,9}/ /g; s/^ *[0-9]{1,3}. /#/g; s/^ *\+[0-9][. ]*/+ /g; s/^ *\-[0-9][. ]*/- /g; /^\s*$/d; /#/{x;p;x;}" > out.txt
 
 
-## Желаемый функционал
+## TODO
 
 * Группировка тестов по количеству правильных ответов
 * В скольки тестах "всё верно" является правильным ответом
