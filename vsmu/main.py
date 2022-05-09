@@ -34,9 +34,9 @@ class Question(object):
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
         if variant in self.answers:
-            warnings.warn(f"Question already have this choice: '{self.question}'")
+            warnings.warn(f"Question '{self.question}' already have this variant: '{variant}'")
             if self.answers[variant]:
-                warnings.warn(f"Duplicated choice marked as true previously, refuse to mark it as false: {self.question}")
+                warnings.warn(f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}")
                 return
         self.answers[variant] = correct
 
@@ -478,6 +478,7 @@ def parse_raw(filename):
     Question starts with number with dot.
     Answers must have plus sign for valid and separator '.' or ')'.
 
+    # Comment
     1. Question:
     -1. answer
     2. answer
@@ -490,7 +491,7 @@ def parse_raw(filename):
     with io.open(filename, mode='r', encoding='utf-8') as f:
         for line in f:
             try:
-                if line.isspace():
+                if line.isspace() or line.startswith('#'):
                     continue
                 elif line[0].isdigit():
                     if Q is not None:
@@ -520,8 +521,8 @@ def parse_raw2(filename):
     Г. Внутрилегочное шунтирование крови
     Д. Нарушение утилизации кислорода в тканях
     """
-    # Stricter regexp for validation in text editor
-    # ^(\d+)\ +(.+?)\n(^\D)\n((?:^\D\..+\n)+)(?=\n)
+    # ^(\d+)\ +(.+?)\n(^\D)\n((?:^\D\..+\n)+)(?=\n)  # Stricter regexp for validation in text editor
+    # ^(\d+)\.*\ +(.+?)\n((?:^[+-]*\D\..+\n)+)  # Same for +/- choice marks
     pattern = re.compile(r"^(\d+)\ +(.+?)\n(^\D)\n((?:.+\n)+)", flags=re.MULTILINE)
     letters = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
@@ -660,16 +661,13 @@ def main():
             continue
         tests.extend(test_part)
 
-    print(f"{len(tests)} questions parsed")
-
-    # Questions filtering
-    if args.unify:
-        nofiltered = len(tests)
-        tests = list(set(tests))
-        print(f"{len(tests)} / {nofiltered} unique tests")
-
+    tests_unique = list(set(tests))
     dup = duplicates(tests)
-    print(f"{len(dup)} questions have duplicates")
+    print(f"Total parsed: {len(tests)}, unique {len(tests_unique)}, appears multiple times: {len(dup)}")
+
+    if args.unify:
+        tests = tests_unique
+
     if args.duplicates:
         print('\n'.join([str(k) for k in dup]))
 

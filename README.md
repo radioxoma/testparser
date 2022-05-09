@@ -44,6 +44,25 @@ Check `testparser --help` for available formats and file extensions. See source 
 
 ### Some sed magic from my wild youth
 
+Strip whitespace:
+
+    ^[\ \t]+(?=\S)  # Trim start
+    [\ \t]+$  # Trim end
+
+Search latin letter at the beginning of the string. When choices enumerated by russian letters АБВГД, А В can be replaces with latin A, B.
+
+    ^\s*[A-Za-z]
+
+Replace
+
+    ^\s*\*
+
+Search for redundant newlines due to hyphenation:
+
+    -\n\d  # First check for hyphens before numbers to save them
+    -\n
+
+
 Выделить текстовые блоки с заданным в `{}` числом строк, отделённые друг от друга хотя бы одной пустой строкой `(^.+?\n){7}`.
 Удалить двойные переносы строк `^$`.
 
