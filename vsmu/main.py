@@ -17,7 +17,7 @@ import lxml.html
 
 
 class Question(object):
-    """An quiz."""
+    """Quiz question object containing plain text question and choices."""
 
     def __init__(self, question):
         super(Question, self).__init__()
@@ -67,6 +67,11 @@ class Question(object):
                 correct.append(v)
         return correct
 
+    def sort_answers(self):
+        """Sort answers in place."""
+        print(self.answers.items())
+        self.answers = OrderedDict(sorted(self.answers.items()))
+
     def __str__(self):
         """Formatted representation in human-readable format (MyTextX style).
 
@@ -83,7 +88,7 @@ class Question(object):
         """
         info = f"# {self.question}\n"
         if self.image_path:
-            info += "@ {self.image_path}\n"
+            info += f"@ {self.image_path}\n"
         for v, c in self.answers.items():
             info += '{} {}\n'.format('+' if c else '-', v)
         return info
@@ -549,12 +554,13 @@ def parse_geetest_epub(filename):
     """
     zcontent = zipfile.ZipFile(filename)
     xhtml = zcontent.read("OEBPS/0.html")
+    ns = {"xhtml": "http://www.w3.org/1999/xhtml"}
     tree = etree.fromstring(xhtml)
 
     strip_num = re.compile(r"^\d+\.\s*")
     Q = None
     questions = list()
-    for p in tree[1]:
+    for p in tree.iterfind(".//xhtml:body/xhtml:p", ns):
         if p.attrib:
             if p.attrib['class'] == 'question':
                 if Q is not None:
