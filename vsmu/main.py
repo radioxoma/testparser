@@ -69,22 +69,21 @@ class Question(object):
 
     def sort_answers(self):
         """Sort answers in place."""
-        print(self.answers.items())
         self.answers = OrderedDict(sorted(self.answers.items()))
 
     def __str__(self):
-        """Formatted representation in human-readable format (MyTextX style).
+        """Formatted representation in human-readable format (old MyTextX style).
 
         There are general functions for exporting quiz in specific formats
         named 'to_mytestx', 'to_anki' etc.
 
-        It's convenient for reading too:
             # An Question
             + Right answer
             - False answer
             + Another right answer
             - Another false-marked answer
-            *An empty string between tests.*
+
+        At least one empty string between tests.
         """
         info = f"# {self.question}\n"
         if self.image_path:
@@ -473,7 +472,7 @@ def parse_rmanpo(filename, export_crib=False):
 
 
 def parse_raw(filename):
-    """Read text from human-written format.
+    """Multichoice human-written format.
 
     Question starts with number with dot.
     Answers must have plus sign for valid and separator '.' or ')'.
@@ -511,7 +510,7 @@ def parse_raw(filename):
 
 
 def parse_raw2(filename):
-    """Формат в которм ответ указан после вопроса.
+    """Single choice format for specific pdf to plain text case.
 
     4 При ОРДС в основе нарушения газообмена в легких лежит:
     Г
