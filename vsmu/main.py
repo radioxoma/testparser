@@ -13,6 +13,7 @@ import zipfile
 from collections import OrderedDict
 from itertools import zip_longest
 import xml.etree.ElementTree as etree
+import html
 import lxml.html
 
 
@@ -574,6 +575,44 @@ def parse_geetest_epub(filename):
     return questions
 
 
+def parse_imsqti_v2p1(filename):
+    """Parser for https://hr-dzm.mos.ru (тесты Московский врач).
+
+    c2123 - probably test id
+    https://hr-dzm.mos.ru/mirads/lmscontent/c2123/103887-070b1d9b0-7962-4d40-9d3c-599fd7ecd7b6.jpg
+        103887 question 'title'
+        TQ$1670105 'identifier', monotone increment
+    https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670085.xml - first existing
+    https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670134.xml - last
+
+    IMS QTI test format https://en.wikipedia.org/wiki/QTI
+    http://www.imsglobal.org/question/index.html
+    pyslet https://gist.github.com/lsloan/1ba7539d097f9c622054c8e83a241297
+    """
+    questions = list()
+    ns = {"imsqti_v2p1": "http://www.imsglobal.org/xsd/imsqti_v2p1"}
+    tree = etree.ElementTree(file=filename).getroot()
+    # Test file type by namespace (no API for that)
+    if not re.match(r'\{(.*?)\}', tree.tag).group(1) in ns.values():
+        print(f"Skipping XML '{file}' due to namespace mismatch")
+        return
+    valid = tree.find(".//imsqti_v2p1:responseDeclaration/imsqti_v2p1:correctResponse/imsqti_v2p1:value", ns).text
+    question = html.unescape(tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:prompt", ns).text)
+    image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
+
+    # Both question and variant 'identifier' increase monotonically
+    Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
+    if image_src is not None:
+        Q.add_image_path(image_src.get('src'))
+    for choice in tree.iterfind(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns):
+        c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
+        Q.add_one_answer(c, valid == choice.get('identifier'))
+    Q.sort_answers()
+    questions.append(Q)
+    # return sorted(questions, key=lambda k: k.question)
+    return questions
+
+
 def to_mytestx(tests):
     """Export to MyTestX format; fine for printing.
     """
@@ -655,6 +694,8 @@ def main():
             test_part = parse_raw2(filename)
         elif filename.endswith("geetest.epub"):
             test_part = parse_geetest_epub(filename)
+        elif filename.endswith(".xml"):
+            test_part = parse_imsqti_v2p1(filename)
         else:
             print(f"Unsupported filename extension {filename}")
             continue

@@ -26,7 +26,7 @@ Check `testparser --help` for available formats and file extensions. See source 
 
 * `-p` print tests to stdout
 * `--to-mytestx` Use parser *TextToMyTestX.exe* from it's website ([example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_mytestx.txt)).
-* `--to-anki` Install desktop [Anki](https://en.wikipedia.org/wiki/Anki_(software)) version, *File > Import* check "*Allow HTML in fields*" (HTML required for test alignment to left), [example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_anki.csv). Standard fields "Question" and "Answer" are used.
+* `--to-anki` Install desktop [Anki](https://en.wikipedia.org/wiki/Anki_(software)) version, *File > Import*. Type Basic. Fields separated by Tab. Import even if existing note has same first field. Check "*Allow HTML in fields*" (HTML required for test alignment to left), [example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_anki.csv). Standard fields "Question" and "Answer" are used.
 *  `--to-crib` short text for printing ([example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_crib.txt)).
 
 ## Known issues
@@ -61,6 +61,11 @@ Search for redundant newlines due to hyphenation:
 
     -\n\d  # First check for hyphens before numbers to save them
     -\n
+
+Remove duplicates:
+
+    sort -u file.txt  # Sorted unique
+    awk '!x[$0]++' file.txt  # Preserve order
 
 
 Выделить текстовые блоки с заданным в `{}` числом строк, отделённые друг от друга хотя бы одной пустой строкой `(^.+?\n){7}`.
