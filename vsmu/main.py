@@ -12,8 +12,11 @@ import warnings
 import zipfile
 from collections import OrderedDict
 from itertools import zip_longest
-import xml.etree.ElementTree as etree
 import html
+# try:
+#     from lxml import etree
+# except ImportError:
+import xml.etree.ElementTree as etree
 import lxml.html
 
 
@@ -624,11 +627,15 @@ def to_mytestx(tests):
 
 
 def to_anki(tests):
-    """Export to Anki CSV (UTF-8, tab delimiter) format.
+    """Export to Anki TSV format (UTF-8, tab delimiter, HTML).
 
-    http://ankisrs.net
+    Most reliable way to generate multichoice quiz flashcards for Anki:
+    1. Uses "Basic" flashcard template (no JS, CSS, custom fields)
+    2. One flashcard per text line
+
+    https://docs.ankiweb.net/importing.html#importing
     """
-    strlst = list()
+    tsv = list()
     for q in tests:
         all_answ = '<div style="text-align:left">'
         cor_answ = '<div style="text-align:left">'
@@ -640,10 +647,11 @@ def to_anki(tests):
                 cor_answ += f'{n}. {v}<br>'
         all_answ += '</div>'
         cor_answ += '</div>'
+        # Anki autodetects separator in first line
+        # Newlines must be replaced with <br> tag
         # Don't use trailing tab: it's needed only for tags.
-        strlst.append(f"{q.question}<br>{all_answ}\t{cor_answ}\n")
-    out = ''.join(strlst)
-    return out
+        tsv.append(f"{q.question}<br>{all_answ}\t{cor_answ}\n")
+    return ''.join(tsv)
 
 
 def to_crib(tests):
