@@ -452,7 +452,7 @@ def parse_rmanpo(filename, export_crib=False):
         choices = rmsp(m.group(5).strip())
         Q = Question(question)
         try:
-            c = choices.split('\n')
+            c = [ch[3:] for ch in choices.split('\n')]  # Shoud put this in RegExp?
             a = corr_matrix_bool[corr]
             if len(c) < len(a):
                 warnings.warn(f"Invalid question has more answers than choices, skipping '{m.group()}'")
