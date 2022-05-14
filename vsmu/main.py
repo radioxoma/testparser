@@ -38,7 +38,7 @@ class Question(object):
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
         if variant in self.answers:
-            warnings.warn(f"Question '{self.question}' already have this variant: '{variant}'")
+            warnings.warn(f"Question '{self.question}' already has this variant: '{variant}'")
             if self.answers[variant]:
                 warnings.warn(f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}")
                 return
@@ -126,6 +126,12 @@ def clear(strlist):
     ['123', '12', '2', '1']
     """
     return list(filter(None, map(lambda x: x.strip(), strlist)))
+
+
+def rmsp(s):
+    """Replace multiple spaces with one.
+    """
+    return re.sub(r"\ +", ' ', s.strip())
 
 
 def short(text, count_stripped=False):
@@ -396,42 +402,23 @@ def parse_mytestx(filename):
     return questions
 
 
-def parse_rmanpo(filename, export_crib=False):
+def parse_rmanpo(filename):
     """Reformat original RMANPO ICU test text 2019-03-12.
 
-    Ошибки форматирования (добавить символ '@' в конце):
-        35 Осложнениями при пункции левой подключичной вены могут быть:
-        69 Клиническими симптомами изотонической дегидратации являются:
-        876 При пароксизмальной предсердной тахикардии показано применение
-    После последнего вопроса такде добавить знак '@', чтобы уже мой парсер сработал
-
-    NB! Здесь есть неиспользуемые разделы ("Раздел 2.Топографическая анатомия и оперативная хирургия"), решено усложнением regexp.
-        Раздел 1. Основы социальная гигиены и  организации 
-        Раздел 2. Топографическая анатомия и оперативная хирургия
-        Раздел 3. Клиническая физиология и биохимия
-        Раздел 5. Клиническая фармакология
-        Раздел 5. ОБЩАЯ АНЕСТЕЗИОЛОГИЯ.
-        Раздел 01. Смежные дисциплины
-        Раздел 02. Общая анестезиология
-        Раздел 03. Частная анестезиология
-        Раздел 04. Реанимация и  интенсивная терапия
-
-    Странные ассоциативные ответы: А6,Б4,В5,Г6,Д2,Е1 выводятся как есть.
+    Note that in the case of 'д' answer fifth choice will always be
+    set to True, if exists.
     """
-    def rmsp(s):
-        """Replace multiple spaces with one.
-        """
-        return re.sub(r"\ +", " " , s)
+    def iterate_stripped(iter):
+        for line in iter:
+            yield rmsp(line)
 
-    # header_expr = re.compile("@([\d\.]+?)@([\d\.]+?)@([а-яА-Я,\d\ ]*?)@@(.+?)(?=@)", flags=re.DOTALL)
-    header_expr = re.compile(r"@([\d\.]+?)@([\d\.]+?)@([а-яА-Я,\d\ ]*?)@@(.+?)@(.+?)(?=@|\n\s*Раздел)", flags=re.DOTALL)
     # Матрица ответов (кому это вообще в голову пришло?)
     corr_matrix_bool = {
-        'а': [True, True, True],            # 1, 2 и 3
-        'б': [True, False, True],           # 1 и 3
-        'в': [False, True, False, True],    # 2 и 4
-        'г': [False, False, False, True],   # 4
-        'д': [True,]
+        'а': [True, True, True],             # 1, 2 и 3
+        'б': [True, False, True],            # 1 и 3
+        'в': [False, True, False, True],     # 2 и 4
+        'г': [False, False, False, True],    # 4
+        'д': [True, True, True, True]  # 1,2,3,4 up to 5, see appending below
     }
     corr_matrix = {
         'а': '1, 2, 3',
@@ -440,44 +427,49 @@ def parse_rmanpo(filename, export_crib=False):
         'г': '4',
         'д': '1,2,3,4,5 или 1,2,3,4'}
 
-    with open(filename, encoding='utf-8') as f:
-        raw_text = f.read()
-
     questions = list()
-    questions_skipped = 0
-    concat = list()
-    for m in re.finditer(header_expr, raw_text):
-        corr = m.group(3).strip().lower()
-        question = rmsp(m.group(4).strip())
-        choices = rmsp(m.group(5).strip())
-        Q = Question(question)
-        try:
-            c = [ch[3:] for ch in choices.split('\n')]  # Shoud put this in RegExp?
-            a = corr_matrix_bool[corr]
-            if len(c) < len(a):
-                warnings.warn(f"Invalid question has more answers than choices, skipping '{m.group()}'")
-                questions_skipped += 1
-            else:
-                Q.add_multiple_answers(c, a)
+    with open(filename) as f:
+        istrip = iterate_stripped(f)
+        for line in istrip:
+            current_empty = not line
+            if '@@' in line:  # First question line
+                num_answer, postfix = line.split('@@')
+                # Postfix contains text 'Задача@' or empty
+                cor_letter = num_answer.split('@')[-1].strip().lower()
+                if len(cor_letter) != 1:
+                    # questions.append(Question(next(istrip).strip('@')))
+                    warnings.warn(f"Unsupported associative question type, skipping {line}")
+                    continue
+                valid = corr_matrix_bool[cor_letter]
+                line = next(istrip)  # Goto first question line
+
+                # Parse question
+                question = ''
+                while not line[0].isdigit():
+                    question +=  line
+                    line = next(istrip)
+                # В тестах @ после условия
+                # В задачах @ перед условием
+                Q = Question(question.strip('@'))
+
+                # Parse choices
+                choices = list()
+                while line and line[0].isdigit():
+                    choices.append(line[2:].strip())
+                    line = next(istrip)
+
+                # As 'д' question can have 4 or 5 choices, corr_matrix_bool
+                # contains 4 by default.
+                # Appending fifth True for questions with 5 choices here.
+                if cor_letter == 'д' and len(valid) < 5:
+                    valid.append(True)
+
+                if len(choices) < len(valid):
+                    warnings.warn("Question has more answers than choices, skipping")
+                    continue
+
+                Q.add_multiple_answers(choices, valid)
                 questions.append(Q)
-        except KeyError:
-            questions_skipped += 1
-            warnings.warn(f"Unsupported question type with associative choices, skipping '{m.group()}'")
-
-        if export_crib:
-            out = "@{}@{} {}\n{}\n".format(m.group(1), m.group(2), question, choices)
-            if corr in corr_matrix:
-                out += "{}: {}".format(corr.upper(), corr_matrix[corr])
-            else:
-                out += corr
-            out += "\n"
-            concat.append(out)
-
-    if export_crib:
-        # There are some strange characters in text '\uf0d7', '\uf0b0'
-        with open('crib.txt', mode='w', encoding='utf-8', errors='ignore') as f:
-            f.write('\n'.join(concat))
-    print(f"parse_rmanpo had skipped {questions_skipped} questions")
     return questions
 
 
