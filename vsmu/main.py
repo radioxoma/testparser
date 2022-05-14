@@ -48,7 +48,8 @@ class Question(object):
         """Add bunch of answer-corect_or_none pairs.
 
         :param list variants: An test variant
-        :param bool correct:
+        :param bool correct: It's possible to pass just [False,] list
+            to set all unknown answers to false. List will be expanded.
         """
         assert isinstance(variants, list) and isinstance(correct, list)
         assert len(variants) >= len(correct)
@@ -551,6 +552,59 @@ def parse_raw2(filename):
     return questions
 
 
+def parse_blocks(filename):
+    """Text consists of question and choices blocks separated by newline.
+
+    Quiz represented as sequence of multiline blocks (questions and
+    choices), separated by newline. First block assumed as a question.
+
+    This has been used for a text layer from an PDF file.
+    """
+    def resplit(sequence, delimiter=';'):
+        """Join strings and split them again at given delimiter.
+
+        For multiline text block with excessive newlines, but each
+        real line ends with semicolon.
+
+        Parameters
+        ----------
+        :param list sequence: List of strings
+        :param str delimiter:
+        :return: list of strings, split at delimiter places
+        """
+        out = list()
+        parts = list()
+        for string in sequence:
+            parts.append(string)
+            if string.endswith(delimiter):
+                out.append(' '.join(parts)[:-1])
+                parts = list()
+        return out
+
+    with open(filename) as f:
+        text = f.read().splitlines()
+    questions = list()
+    previous_empty = False
+    even = False
+    parts = list()
+    for line in text:
+        current_empty = not line.strip()  # True if empty line
+        if not current_empty:
+            if previous_empty:  # Start of the new text block
+                if even:
+                    Q.add_multiple_answers(resplit(parts), [False,])
+                    questions.append(Q)
+                else:
+                    Q = Question(' '.join(parts))
+                parts = list()
+                even = not even
+            parts.append(line)
+        previous_empty = current_empty
+    Q.add_multiple_answers(resplit(parts), [False,])
+    questions.append(Q)
+    return questions
+
+
 def parse_geetest_epub(filename):
     """https://geetest.ru/ parser.
 
@@ -579,7 +633,10 @@ def parse_geetest_epub(filename):
 
 
 def parse_imsqti_v2p1(filename):
-    """Parser for https://hr-dzm.mos.ru (тесты Московский врач).
+    """Parser for Mirapolis LMS.
+
+    https://hr-dzm.mos.ru (тесты Московский врач).
+    You must have access to test (in testing attempt) to fetch XML.
 
     c2123 - probably test id
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/103887-070b1d9b0-7962-4d40-9d3c-599fd7ecd7b6.jpg
@@ -700,6 +757,8 @@ def main():
             test_part = parse_raw(filename)
         elif filename.endswith("raw2.txt"):
             test_part = parse_raw2(filename)
+        elif filename.endswith("blocks.txt"):
+            test_part = parse_blocks(filename)
         elif filename.endswith("geetest.epub"):
             test_part = parse_geetest_epub(filename)
         elif filename.endswith(".xml"):
