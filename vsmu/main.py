@@ -557,6 +557,56 @@ def parse_raw2(filename):
     return questions
 
 
+def parse_raw3(filename):
+    """Test from human-readable Word document with answers at the appndix.
+
+    http://minzdravrd.ru/vrachi
+
+    Convert to plain text:
+
+        libreoffice --headless --convert-to txt *
+
+    002. В 1986 г. наиболее высокие дозы облучения щитовидной железы чаще всего встречались у следующих контингентов
+     а) дошкольники
+     б) школьники
+     в) подростки
+     г) взрослое население
+     д) ликвидаторы
+
+    001-Б
+    002-А
+    003-В
+    004-А
+    """
+    pattern_question = re.compile(r"^(\d+)\.\ +(.+?)\n((?:.+\n)+)", flags=re.MULTILINE)
+    pattern_valid = re.compile(r"^(\d{3})-(\D)", flags=re.MULTILINE)  # A
+    letters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+
+    with open(filename) as f:
+        text = f.read()
+
+    # Iterate in parallel by questions and valid answers
+    questions = list()
+    for match_question, match_answer in zip(re.finditer(pattern_question, text), re.finditer(pattern_valid, text)):
+        Q = Question(match_question.group(2).strip())
+        assert match_question.group(1) == match_answer.group(1)  # Question number
+        valid = match_answer.group(2).lower()
+        choices = match_question.group(3).strip().split('\n')
+        for letter, choice in zip(letters, choices):
+            choice = choice.strip()
+            # Catch missing choices by АБВГДЕ increment at string beginning
+            if not letter == choice[0]:
+                warnings.warn(f"Invalid АБВГДЕ increment, check newlines '{match_question.group(0)}'")
+            if not choice[1:].startswith(') '):
+                warnings.warn(f"Choice not begging with '<letter>) ' '{match_question.group(0)}'")
+            Q.add_one_answer(choice[3:], valid == choice[0])
+        # if not Q.correct():
+        #     warnings.warn(f"No valid answer for a question '{match_question.group(0)}'")
+        if Q is not None:
+            questions.append(Q)
+    return questions
+
+
 def parse_blocks(filename):
     """Text consists of question and choices blocks separated by newline.
 
@@ -762,6 +812,8 @@ def main():
             test_part = parse_raw(filename)
         elif filename.endswith("raw2.txt"):
             test_part = parse_raw2(filename)
+        elif filename.endswith("raw3.txt"):
+            test_part = parse_raw3(filename)
         elif filename.endswith("blocks.txt"):
             test_part = parse_blocks(filename)
         elif filename.endswith("geetest.epub"):
