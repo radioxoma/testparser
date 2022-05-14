@@ -98,7 +98,8 @@ class Question(object):
         return info
 
     def __hash__(self):
-        items = sorted([(k.lower(), v) for k, v in self.answers.items()])
+        items = sorted([(k.lower(), v) for k, v in self.answers.items()])  # Answers with True/False mark
+        # items = sorted([k.lower() for k in self.answers.keys()])  # Answers only
         return hash((self.question.lower(), self.image_path, tuple(items)))
 
     def __eq__(self, other):
@@ -108,10 +109,14 @@ class Question(object):
             return False
         if not self.image_path == other.image_path:
             return False
-        return dict(self.answers) == dict(other.answers)  # Order-insensitive
+        if not dict(self.answers) == dict(other.answers):  # Answers with True/False mark
+            return False
+        # if not self.answers.keys() == other.answers.keys():  # Answers only
+        #    return False
+        return True
 
-    def __ne__(self, other):
-        return not self == other
+    # def __ne__(self, other):
+    #     return not self == other
 
 
 def clear(strlist):
