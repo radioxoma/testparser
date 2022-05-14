@@ -25,9 +25,11 @@ class Question(object):
 
     def __init__(self, question):
         super(Question, self).__init__()
-        self.question = question
+        self.question = question.strip(':')
         self.answers = OrderedDict()
         self.image_path = None
+        if not self.question:
+            warnings.warn("Empty question added")
 
     def add_one_answer(self, variant, correct):
         """Add one answer-corect_or_none pair.
@@ -450,11 +452,15 @@ def parse_rmanpo(filename):
                     line = next(istrip)
                 # В тестах @ после условия
                 # В задачах @ перед условием
-                Q = Question(question.strip('@'))
+                Q = Question(question.strip('@ '))
 
                 # Parse choices
                 choices = list()
+                i = 0
                 while line and line[0].isdigit():
+                    i += 1
+                    if int(line[0]) != i:
+                        raise ValueError(f"Wrong choice enumeration in question '{question}'")
                     choices.append(line[2:].strip())
                     line = next(istrip)
 
