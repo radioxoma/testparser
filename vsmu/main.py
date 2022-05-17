@@ -714,12 +714,20 @@ def parse_imsqti_v2p1(filename):
     image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
 
     # Both question and variant 'identifier' increase monotonically
-    Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
+    title = tree.get('title')
+    question = question.replace('<!--2-->', '')
+
+    # Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
+    if title == question:
+        Q = Question(f"{tree.get('identifier')} {question}")
+    else:
+        Q = Question(f"{tree.get('identifier')} {title} {question}")
     if image_src is not None:
         Q.add_image_path(image_src.get('src'))
     for choice in tree.iterfind(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns):
-        c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
-        Q.add_one_answer(c, valid == choice.get('identifier'))
+        # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
+        c = f"{choice.get('index')} {html.unescape(choice.text.strip())}"
+        Q.add_one_answer(c.replace('<!--2-->', ''), valid == choice.get('identifier'))
     Q.sort_answers()
     questions.append(Q)
     # return sorted(questions, key=lambda k: k.question)
