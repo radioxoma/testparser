@@ -714,8 +714,8 @@ def parse_imsqti_v2p1(filename):
     image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
 
     # Both question and variant 'identifier' increase monotonically
-    title = tree.get('title')
-    question = question.replace('<!--2-->', '')
+    title = lxml.html.fromstring(tree.get('title')).text_content().strip()
+    question = lxml.html.fromstring(question).text_content().replace(' ', ' ').replace('  ', ' ').strip()
 
     # Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
     if title == question:
