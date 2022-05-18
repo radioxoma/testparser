@@ -25,11 +25,59 @@ class Question(object):
 
     def __init__(self, question):
         super(Question, self).__init__()
-        self.question = question.strip(':')
+        self.__strip_compare = "\n\t :;.?"  # If None, act as defaut Python strip()
+        self.question = question
         self.answers = OrderedDict()
         self.image_path = None
         if not self.question:
             warnings.warn("Empty question added")
+        self.__cache_gen_question = None
+        self.__cache_gen_answers = None
+
+    def __str__(self):
+        """Formatted representation in human-readable format (old MyTextX style).
+
+        There are general functions for exporting quiz in specific formats
+        named 'to_mytestx', 'to_anki' etc.
+
+            # An Question
+            + Right answer
+            - False answer
+            + Another right answer
+            - Another false-marked answer
+
+        At least one empty string between tests.
+        """
+        info = f"# {self.question}\n"
+        if self.image_path:
+            info += f"@ {self.image_path}\n"
+        for v, c in self.answers.items():
+            info += '{} {}\n'.format('+' if c else '-', v)
+        return info
+
+    def __hash__(self):
+        return hash((self.question_generalized, self.image_path, tuple(
+            sorted(self.answers_generalized.items()))))
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            raise AttributeError("Comparison with other object type")
+        if not self.question_generalized == other.question_generalized:
+            return False
+        if not self.image_path == other.image_path:
+            return False
+        if not self.answers_generalized == other.answers_generalized:  # Answers with True/False mark
+            return False
+        # if not self.answers_generalized.keys() == other.answers_generalized.keys():  # Answers only
+        #    return False
+        return True
+
+    def __bool__(self):
+        """True if contains any choice marked as True.
+
+        Test can contain all False choices if answer wasn't given.
+        """
+        return any(self.answers.values())
 
     def add_one_answer(self, variant, correct):
         """Add one answer-corect_or_none pair.
@@ -78,47 +126,30 @@ class Question(object):
         """Sort answers in place."""
         self.answers = OrderedDict(sorted(self.answers.items()))
 
-    def __str__(self):
-        """Formatted representation in human-readable format (old MyTextX style).
-
-        There are general functions for exporting quiz in specific formats
-        named 'to_mytestx', 'to_anki' etc.
-
-            # An Question
-            + Right answer
-            - False answer
-            + Another right answer
-            - Another false-marked answer
-
-        At least one empty string between tests.
+    @property
+    def question_generalized(self):
+        """Question stripped of meaningless symbols for comparison.
         """
-        info = f"# {self.question}\n"
-        if self.image_path:
-            info += f"@ {self.image_path}\n"
-        for v, c in self.answers.items():
-            info += '{} {}\n'.format('+' if c else '-', v)
-        return info
+        if not self.__cache_gen_question:
+            self.__cache_gen_question = self.question.casefold().strip(self.__strip_compare)
+        return self.__cache_gen_question
 
-    def __hash__(self):
-        items = sorted([(k.lower(), v) for k, v in self.answers.items()])  # Answers with True/False mark
-        # items = sorted([k.lower() for k in self.answers.keys()])  # Answers only
-        return hash((self.question.lower(), self.image_path, tuple(items)))
+    @property
+    def answers_generalized(self):
+        """Answers stripped of meaningless symbols for comparison.
 
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            raise AttributeError("Comparison with other object type")
-        if not self.question == other.question:
-            return False
-        if not self.image_path == other.image_path:
-            return False
-        if not dict(self.answers) == dict(other.answers):  # Answers with True/False mark
-            return False
-        # if not self.answers.keys() == other.answers.keys():  # Answers only
-        #    return False
-        return True
-
-    # def __ne__(self, other):
-    #     return not self == other
+        Note, that it doesn't returns OrderedDict, as it compares order.
+        """
+        if not self.__cache_gen_answers:
+            items = list()
+            for k, v in self.answers.items():
+                k = k.casefold().strip(self.__strip_compare)
+                # if answers_only:
+                #     items.append(k)
+                # else:
+                items.append((k, v))  # Answers with True/False mark
+            self.__cache_gen_answers = dict(items)
+        return self.__cache_gen_answers
 
 
 def clear(strlist):
@@ -437,7 +468,7 @@ def parse_rmanpo(filename):
             if '@@' in line:  # First question line
                 num_answer, postfix = line.split('@@')
                 # Postfix contains text 'Задача@' or empty
-                cor_letter = num_answer.split('@')[-1].strip().lower()
+                cor_letter = num_answer.split('@')[-1].strip().casefold()
                 if len(cor_letter) != 1:
                     # questions.append(Question(next(istrip).strip('@')))
                     warnings.warn(f"Unsupported associative question type, skipping {line}")
@@ -588,7 +619,7 @@ def parse_raw3(filename):
     for match_question, match_answer in zip(re.finditer(pattern_question, text), re.finditer(pattern_valid, text)):
         Q = Question(match_question.group(2).strip())
         assert match_question.group(1) == match_answer.group(1)  # Question number
-        valid = match_answer.group(2).lower()
+        valid = match_answer.group(2).casefold()
         choices = match_question.group(3).strip().split('\n')
         for letter, choice in zip(letters, choices):
             choice = choice.strip()
@@ -843,7 +874,7 @@ def main():
 
     # Sorting important for a crib shortener!
     if args.sort or args.to_crib:
-        tests.sort(key=lambda q: str(q).lower())
+        tests.sort(key=lambda q: str(q).casefold())
 
     # Output
     if args.p:

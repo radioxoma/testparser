@@ -22,7 +22,7 @@ class TestEvsmu(unittest.TestCase):
         different answers.
         """
         self.quiz_evsmu = testparser.parse_evsmu(os.path.join(curdir, "evsmu/g495.htm"))
-        self.quiz_evsmu.sort(key=lambda q: q.question.lower())
+        self.quiz_evsmu.sort(key=lambda q: q.question.casefold())
 
     def test_evsmu_to_mytestx_output(self):
         with io.open(os.path.join(curdir, 'evsmu/g495_mytestx.txt'), encoding='cp1251') as f:
@@ -46,7 +46,7 @@ class TestEvsmu(unittest.TestCase):
 class TestDo(unittest.TestCase):
     def setUp(self):
         self.quiz_do = testparser.parse_do(os.path.join(curdir, "do/g100_do_pic.htm"))
-        self.quiz_do.sort(key=lambda q: q.question.lower())
+        self.quiz_do.sort(key=lambda q: q.question.casefold())
 
     def test_do_to_mytestx(self):
         s1 = set(testparser.parse_mytestx(os.path.join(curdir, "do/g100_do_pic.txt")))
@@ -57,12 +57,12 @@ class TestDo(unittest.TestCase):
 class TestMytestx(unittest.TestCase):
     def setUp(self):
         self.quiz_mytestx = testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_sorted.txt"))
-        self.quiz_mytestx.sort(key=lambda q: q.question.lower())
+        self.quiz_mytestx.sort(key=lambda q: q.question.casefold())
 
         # Case with equal questions but different answers
         # Similar questions for shortener test
         self.quiz_mytestx_guileful = list(set(testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_guileful.txt"))))
-        self.quiz_mytestx_guileful.sort(key=lambda q: q.question.lower())
+        self.quiz_mytestx_guileful.sort(key=lambda q: q.question.casefold())
 
     def test_mytestx_parser(self):
         mytestx = testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_unsorted.txt"))
@@ -75,9 +75,9 @@ class TestMytestx(unittest.TestCase):
         # Assertion make sense only if total questions > 1
         self.assertNotEqual(
             sorted(list(set(self.quiz_mytestx)),
-                key=lambda q: q.question.lower()),
+                key=lambda q: q.question.casefold()),
             sorted(list(set(mytestx)),
-                key=lambda q: q.question.lower(), reverse=True))
+                key=lambda q: q.question.casefold(), reverse=True))
 
     def test_to_mytestx_output(self):
         with io.open(os.path.join(curdir, 'mytestx/quiz_sorted.txt'), encoding='cp1251') as f:
