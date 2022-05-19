@@ -261,7 +261,7 @@ def parse_gift(filename):
     return questions
 
 
-def parse_do(filename, correct_presented=True):
+def parse_do(filename):
     """do.vsmu.by Moodle tests parser.
 
     TODO:
@@ -295,12 +295,8 @@ def parse_do(filename, correct_presented=True):
         choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()")
         test_choices = clear(choices)
         correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
-        if correct_presented:
-            if len(test_choices) != len(correct):
-                print(Q)
-                raise ValueError(
-                    "Number of variants does not match with number of correct answers.\n"
-                    "If correct answers are not provided by test page, use `--na` option.")
+        if len(test_choices) != len(correct):
+            warnings.warn(f"Number of variants does not match with number of correct answers '{Q}'")
         for C, A in zip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
@@ -366,7 +362,7 @@ def parse_do(filename, correct_presented=True):
     return questions
 
 
-def parse_evsmu(filename, correct_presented=True):
+def parse_evsmu(filename):
     """e-vsmu.by Moodle tests parser.
     """
     doc = lxml.html.parse(filename).getroot()
@@ -382,17 +378,8 @@ def parse_evsmu(filename, correct_presented=True):
         correct = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
         answ_divs = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div')
         answers = [a.text_content().strip()[3:] for a in answ_divs]
-        if correct_presented:
-            if len(answers) != len(correct):
-                errmsg = textwrap.dedent("""\
-                    Number of variants does not match with number of correct answers.
-                    * If correct answers are not provided by test page, use `--na` argument.
-                    * If the question contains some bad formatted symbols like '<' or '>', replace it with &lt; &gt; equivalents or usual text.
-
-                    Question which had raised the error:
-                    {}""")
-                print(errmsg.format(Q))
-                quit()
+        if len(answers) != len(correct):
+            warnings.warn(f"Number of variants does not match with number of correct answers '{Q}'")
         for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
@@ -816,31 +803,17 @@ def to_crib(tests):
     return "\n".join(result)
 
 
-def main():
-    """Define parser, collect questions.
+def load_files(files):
+    """Parse all files from a list.
     """
-    parser = argparse.ArgumentParser(
-        description=__description__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'geetest.epub'). Multiple files will be concatenated.")
-    parser.add_argument("--na", action='store_false', help="Do not raise an exception if page doesn't have question answers. Normally, if there is nonequal count of variants and answers, program will quit.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicated tests. Case-sensitive.")
-    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates.")
-    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT in MyTestX format.")
-    parser.add_argument("-s", "--sort", action='store_true', help="Sort tests.")
-    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
-    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
-    parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
-    args = parser.parse_args()
-
     tests = list()
-    for filename in args.input:
+    for filename in files:
         if filename.endswith("gift.txt"):
             test_part = parse_gift(filename)
         elif filename.endswith("evsmu.htm"):
-            test_part = parse_evsmu(filename, correct_presented=args.na)
+            test_part = parse_evsmu(filename)
         elif filename.endswith("do.htm"):
-            test_part = parse_do(filename, correct_presented=args.na)
+            test_part = parse_do(filename)
         elif filename.endswith("mytestx.txt"):
             test_part = parse_mytestx(filename)
         elif filename.endswith("rmanpo.txt"):
@@ -858,21 +831,66 @@ def main():
         elif filename.endswith(".xml"):
             test_part = parse_imsqti_v2p1(filename)
         else:
-            print(f"Unsupported filename extension {filename}")
+            # print(f"Unsupported filename extension {filename}")
             continue
         tests.extend(test_part)
+    return tests
 
-    tests_unique = list(set(tests))
+
+def solve(answered_list, to_solve):
+    """Search unknown tests in collection of answered.
+    """
+    answered_unique = set(filter(None, answered_list))  # Remove unanswered tests
+    unsolved_unique = set(to_solve)
+    unsolved_count = len([k for k in unsolved_unique if not k])
+    print(f"Solving: {len(to_solve)}, unique {len(unsolved_unique)}, without answer {unsolved_count}")
+
+    solved = list()
+    for unsolved in to_solve:
+        if unsolved:  # Keep already solved tests
+            solved.append(unsolved)
+            continue
+        for answered in answered_unique:
+            if (unsolved.question_generalized == answered.question_generalized and
+                unsolved.answers_generalized.keys() == answered.answers_generalized.keys()):
+                solved.append(answered)
+                break
+    print(f"{len(solved)}/{unsolved_count} tests found")
+    return solved
+
+
+def main():
+    """Define parser, collect questions.
+    """
+    parser = argparse.ArgumentParser(
+        description=__description__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'blocks.txt', 'geetest.epub'). Multiple files will be concatenated.")
+    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicates")
+    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates")
+    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT in MyTestX format")
+    parser.add_argument("-s", "--sort", action='store_true', help="Sort tests")
+    parser.add_argument("--solve", nargs="+", help="Return same file, populated with answers from 'input'")
+    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
+    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
+    parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
+    args = parser.parse_args()
+
+    tests = load_files(args.input)
+    tests_unique = set(tests)
     dup = duplicates(tests)
     print(f"Total parsed: {len(tests)}, unique {len(tests_unique)}, appears multiple times: {len(dup)}")
-
-    if args.unify:
-        tests = tests_unique
 
     if args.duplicates:
         print('\n'.join([str(k) for k in dup]))
 
-    # Sorting important for a crib shortener!
+    if args.solve:
+        print("Output will contain only tests, passed to '--solve'")
+        tests = solve(tests, load_files(args.solve))
+
+    if args.unify:  # Must be after parsing and 'solve'
+        tests = list(tests_unique)
+
     if args.sort or args.to_crib:
         tests.sort(key=lambda q: str(q).casefold())
 
