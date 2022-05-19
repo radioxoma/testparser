@@ -38,9 +38,13 @@ Check `testparser --help` for available formats and file extensions. See source 
 
 ## Command line tips
 
-    $ libreoffice --headless --convert-to txt *  # Batch file conversion to plaintext
+    $ libreoffice --headless --convert-to txt *  # Batch conversion to plaintext
     $ pdftotext in.pdf out.txt  # From package poppler-utils or python-pdftotext
     $ iconv -c -f utf-8 -t windows-1251 > win.txt
+
+If encoding is messed, try visual tool https://2cyr.com/decode/ E.g. source encoding cp1251 displayed as cp1252:
+
+    $ iconv -c -f utf-8 -t cp1252 tests.txt | iconv -c -f cp1251 -t utf-8
 
 ### Some sed magic from my wild youth
 
