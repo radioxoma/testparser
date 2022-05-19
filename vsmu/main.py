@@ -87,6 +87,7 @@ class Question(object):
         """
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
+        variant = variant.strip(';,. ')
         if variant in self.answers:
             warnings.warn(f"Question '{self.question}' already has this variant: '{variant}'")
             if self.answers[variant]:
@@ -595,7 +596,7 @@ def parse_raw3(filename):
     004-А
     """
     pattern_question = re.compile(r"^(\d+)\.\ +(.+?)\n((?:.+\n)+)", flags=re.MULTILINE)
-    pattern_valid = re.compile(r"^(\d{3})-(\D)", flags=re.MULTILINE)  # A
+    pattern_valid = re.compile(r"^(\d+)-(\D)", flags=re.MULTILINE)  # A
     letters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 
     with open(filename) as f:
@@ -870,7 +871,8 @@ def main():
     parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates")
     parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT in MyTestX format")
     parser.add_argument("-s", "--sort", action='store_true', help="Sort tests")
-    parser.add_argument("--solve", nargs="+", help="Return same file, populated with answers from 'input'")
+    parser.add_argument("--solve", nargs="+", help="Populate this file with answers from 'input'")
+    parser.add_argument("--has-answer", action='store_true', help="Remove questions without answer")
     parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
     parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
@@ -887,6 +889,9 @@ def main():
     if args.solve:
         print("Output will contain only tests, passed to '--solve'")
         tests = solve(tests, load_files(args.solve))
+
+    if args.has_answer:
+        tests = [k for k in tests if k]
 
     if args.unify:  # Must be after parsing and 'solve'
         tests = list(tests_unique)
