@@ -721,20 +721,26 @@ def parse_imsqti_v2p1(filename):
     http://www.imsglobal.org/question/index.html
     pyslet https://gist.github.com/lsloan/1ba7539d097f9c622054c8e83a241297
     """
+    def strip(s):
+        return s.replace(' ', ' ').replace('  ', ' ').replace('<!--2-->', '').strip()
+
     questions = list()
     ns = {"imsqti_v2p1": "http://www.imsglobal.org/xsd/imsqti_v2p1"}
     tree = etree.ElementTree(file=filename).getroot()
     # Test file type by namespace (no API for that)
     if not re.match(r'\{(.*?)\}', tree.tag).group(1) in ns.values():
-        print(f"Skipping XML '{file}' due to namespace mismatch")
-        return
+        print(f"Skipping XML '{filename}' due to namespace mismatch")
+        return questions
+    if not tree.find(".//imsqti_v2p1:responseDeclaration", ns):
+        print(f"Skipping XML '{filename}': test content not found")
+        return questions
     valid = tree.find(".//imsqti_v2p1:responseDeclaration/imsqti_v2p1:correctResponse/imsqti_v2p1:value", ns).text
     question = html.unescape(tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:prompt", ns).text)
     image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
 
     # Both question and variant 'identifier' increase monotonically
-    title = lxml.html.fromstring(tree.get('title')).text_content().strip()
-    question = lxml.html.fromstring(question).text_content().replace(' ', ' ').replace('  ', ' ').strip()
+    title = strip(lxml.html.fromstring(tree.get('title')).text_content())
+    question = strip(lxml.html.fromstring(question).text_content())
 
     # Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
     if title == question:
@@ -745,8 +751,8 @@ def parse_imsqti_v2p1(filename):
         Q.add_image_path(image_src.get('src'))
     for choice in tree.iterfind(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns):
         # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
-        c = f"{choice.get('index')} {html.unescape(choice.text.strip())}"
-        Q.add_one_answer(c.replace('<!--2-->', ''), valid == choice.get('identifier'))
+        c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
+        Q.add_one_answer(c, valid == choice.get('identifier'))
     Q.sort_answers()
     questions.append(Q)
     # return sorted(questions, key=lambda k: k.question)
