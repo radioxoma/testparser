@@ -879,7 +879,7 @@ def main():
     parser.add_argument("-s", "--sort", action='store_true', help="Sort tests")
     parser.add_argument("--solve", nargs="+", help="Populate this file with answers from 'input'")
     parser.add_argument("--has-answer", action='store_true', help="Remove questions without answer")
-    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net")
+    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net https://irenproject.ru/")
     parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
     args = parser.parse_args()
