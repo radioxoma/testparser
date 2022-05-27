@@ -249,7 +249,7 @@ def parse_gift(filename):
 
     Q = None
     questions = list()
-    with io.open(filename, mode='r', encoding='utf-8') as f:
+    with open(filename) as f:
         for match in re.finditer(test, f.read()):
             if Q is not None:
                 questions.append(Q)
@@ -398,14 +398,14 @@ def parse_evsmu(filename):
 def parse_mytestx(filename):
     """Read text file in MyTestX format.
 
-    Encoding must be cp1251.
+    Encoding used to be cp1251.
     """
     # q = re.compile("(?<=^#).+(?=\s*$)")
     # i = re.compile("^(?<=^@).+(?=\s*$)")
     # v = re.compile("^[+-].+(?=\s*$)")
     questions = list()
     first_question = True
-    with io.open(filename, mode='r', encoding='cp1251') as f:
+    with open(filename) as f:
         for line in f:
             if line.startswith("#"):
                 if not first_question:
@@ -514,7 +514,7 @@ def parse_raw(filename):
     ptn_answer = re.compile(r"^(.*?(?:\.|\))\s*)(.*)")
     Q = None
     questions = list()
-    with io.open(filename, mode='r', encoding='utf-8') as f:
+    with open(filename) as f:
         for line in f:
             try:
                 if line.isspace() or line.startswith('#'):
@@ -759,16 +759,6 @@ def parse_imsqti_v2p1(filename):
     return questions
 
 
-def to_mytestx(tests):
-    """Export to MyTestX format; fine for printing.
-    """
-    out = '\n'.join([str(k) for k in tests])
-    out = out.replace('α', 'альфа')
-    out = out.replace('β', 'бета')
-    out = out.replace('γ', 'гамма')
-    return out
-
-
 def to_anki(tests):
     """Export to Anki TSV format (UTF-8, tab delimiter, HTML).
 
@@ -879,8 +869,8 @@ def main():
     parser.add_argument("-s", "--sort", action='store_true', help="Sort tests")
     parser.add_argument("--solve", nargs="+", help="Populate this file with answers from 'input'")
     parser.add_argument("--has-answer", action='store_true', help="Remove questions without answer")
-    parser.add_argument("--to-mytestx", help="Save formatted text into *.txt Windows-1251 encoded file. Fine for printing (file is human-readable) or importing in http://mytest.klyaksa.net https://irenproject.ru/")
-    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards http://ankisrs.net")
+    parser.add_argument("--to-mytestx", help="Save human-readable plain text with \\r\\n. Can be imported in http://mytest.klyaksa.net https://irenproject.ru")
+    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards https://apps.ankiweb.net/")
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
     args = parser.parse_args()
 
@@ -909,16 +899,15 @@ def main():
     if args.p:
         print('\n'.join([str(k) for k in tests]))
     if args.to_mytestx:
-        with io.open(args.to_mytestx, mode='w', encoding='cp1251',
-            errors='ignore', newline='\r\n') as f:
-            f.write(to_mytestx(tests))
+        with open(args.to_mytestx, mode='w', encoding='utf-8',
+            newline='\r\n') as f:
+            f.write('\n'.join([str(k) for k in tests]))
     if args.to_anki:
-        with io.open(args.to_anki, mode='w', encoding='utf-8',
-            errors='ignore') as f:
+        with open(args.to_anki, mode='w', encoding='utf-8') as f:
             f.write(to_anki(tests))
     if args.to_crib:
-        with io.open(args.to_crib, mode='w', encoding='utf-8',
-            errors='ignore', newline='\r\n') as f:
+        with open(args.to_crib, mode='w', encoding='utf-8',
+            newline='\r\n') as f:
             f.write(to_crib(tests))
 
 
