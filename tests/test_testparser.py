@@ -25,7 +25,7 @@ class TestEvsmu(unittest.TestCase):
         self.quiz_evsmu.sort(key=lambda q: q.question.casefold())
 
     def test_evsmu_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'evsmu/g495_mytestx.txt'), encoding='cp1251') as f:
+        with io.open(os.path.join(curdir, 'evsmu/g495_mytestx.txt')) as f:
             for a, b in zip(f.read().split(), testparser.to_mytestx(self.quiz_evsmu).split()):
                 try:
                     self.assertEqual(a, b)
@@ -80,7 +80,7 @@ class TestMytestx(unittest.TestCase):
                 key=lambda q: q.question.casefold(), reverse=True))
 
     def test_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'mytestx/quiz_sorted.txt'), encoding='cp1251') as f:
+        with io.open(os.path.join(curdir, 'mytestx/quiz_sorted.txt')) as f:
             self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_mytestx))
 
 
@@ -89,8 +89,9 @@ class TestRaw(unittest.TestCase):
         self.quiz = testparser.parse_raw(os.path.join(curdir, "raw/raw.txt"))
 
     def test_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'raw/raw.mytestx.txt'), encoding='cp1251') as f:
+        with io.open(os.path.join(curdir, 'raw/raw.mytestx.txt')) as f:
             self.assertEqual(f.read(), testparser.to_mytestx(self.quiz))
+
 
 if __name__ == '__main__':
     unittest.main()
