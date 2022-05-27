@@ -399,18 +399,29 @@ def parse_mytestx(filename):
     """Read text file in MyTestX format.
 
     Encoding used to be cp1251.
+
+        // Comment
+        # Question in one line
+        @image_path.jpg
+        + Valid
+        - Invalid
+        Invalid too
+        # Next question
     """
     # q = re.compile("(?<=^#).+(?=\s*$)")
     # i = re.compile("^(?<=^@).+(?=\s*$)")
     # v = re.compile("^[+-].+(?=\s*$)")
     questions = list()
     first_question = True
+    Q = None
     with open(filename) as f:
         for line in f:
+            line = line.replace('\t', ' ').strip()
+            if not line or line.startswith("//"):  # Ignore empty and comments
+                continue
             if line.startswith("#"):
-                if not first_question:
+                if Q is not None:
                     questions.append(Q)
-                first_question = False
                 Q = Question(line[1:].strip())
             elif line.startswith("@"):
                 Q.add_image_path(line[1:].strip())
@@ -418,8 +429,9 @@ def parse_mytestx(filename):
                 Q.add_one_answer(line[1:].strip(), True)
             elif line.startswith("-"):
                 Q.add_one_answer(line[1:].strip(), False)
-        if Q is not None:
-            questions.append(Q)
+            else:  # Interpret lines without markup as False choice
+                Q.add_one_answer(line, False)
+        questions.append(Q)
     return questions
 
 
