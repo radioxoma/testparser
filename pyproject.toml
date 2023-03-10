@@ -1,0 +1,37 @@
+[project]
+name = "vsmu-scripts"
+dynamic = ["version"]
+description = "VSMU tests parser"
+readme = "README.md"
+requires-python = ">=3.8.10"
+license = {file = "LICENSE"}
+authors = [
+    { name = "Eugene Dvoretsky", email = "radioxoma@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Education :: Testing",
+    "Topic :: Text Processing",
+]
+
+dependencies = [
+    "lxml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "vsmu.__version__"}
+
+[project.urls]
+Homepage = "https://github.com/radioxoma/vsmu-scripts"
+
+[project.gui-scripts]
+testparser = "vsmu.__main__:main"

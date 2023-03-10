@@ -4,7 +4,7 @@ import os
 import sys
 import unittest
 
-from vsmu import main as testparser
+from vsmu import __main__ as testparser
 
 curdir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, curdir + "/../")
