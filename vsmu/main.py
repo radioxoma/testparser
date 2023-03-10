@@ -4,28 +4,30 @@ __description__ = """\
 Test quiz parser and converter
 """
 
+import argparse
+import html
 import io
 import re
-import argparse
 import textwrap
 import warnings
+
+try:
+    from lxml import etree
+except ImportError:
+    import xml.etree.ElementTree as etree
+
 import zipfile
 from collections import OrderedDict
 from itertools import zip_longest
-import html
 
-# try:
-#     from lxml import etree
-# except ImportError:
-import xml.etree.ElementTree as etree
 import lxml.html
 
 
-class Question(object):
+class Question:
     """Quiz question object containing plain text question and choices."""
 
     def __init__(self, question):
-        super(Question, self).__init__()
+        super().__init__()
         self.__strip_compare = "\n\t :;.?"  # If None, act as defaut Python strip()
         self.question = question
         self.answers = OrderedDict()
@@ -178,8 +180,9 @@ def rmsp(s):
     return re.sub(r"\ +", " ", s.strip())
 
 
-def short(text, count_stripped=False):
-    """
+def short(text: str, count_stripped: bool = False) -> str:
+    """Shorten str for crib.
+
     >>> short('Something wrong with compatibility regressions.'.split())
     u'Som-ng wrong with com-ty reg-s.'
     >>> short('Something wrong with compatibility regressions.'.split(), True)
@@ -274,9 +277,9 @@ def parse_gift(filename):
 
 
 def parse_do(filename):
-    """do.vsmu.by Moodle tests parser.
+    """Parse Moodle tests from do.vsmu.by.
 
-    TODO:
+    Todo:
     * Добавить +- к вопросам с ниспадающим списком.
     * Скорректировать текст вопросов.
 
@@ -356,7 +359,7 @@ def parse_do(filename):
         for answ in answer2:
             this = answ.get("onmouseover")
             # print(this.encode('UTF-8'))
-            rp = re.compile("Правильный ответ: (.+?)<\/div>", re.UNICODE)
+            rp = re.compile(r"Правильный ответ: (.+?)<\/div>", re.UNICODE)
             test_correct = re.search(rp, this).group(1)
             print("Правильно: '%s'" % test_correct.encode("UTF-8"))
 
@@ -705,17 +708,18 @@ def parse_blocks(filename):
     This has been used for a text layer from an PDF file.
     """
 
-    def resplit(sequence, delimiter=";"):
+    def resplit(sequence: list[str], delimiter: str = ";") -> list[str]:
         """Join strings and split them again at given delimiter.
 
         For multiline text block with excessive newlines, but each
         real line ends with semicolon.
 
-        Parameters
-        ----------
-        :param list sequence: List of strings
-        :param str delimiter:
-        :return: list of strings, split at delimiter places
+        Args:
+            sequence: List of strings
+            delimiter:
+
+        Returns:
+            List of strings, split at delimiter places
         """
         out = list()
         parts = list()
@@ -878,7 +882,7 @@ def to_anki(tests: list[Question]) -> str:
     return "".join(tsv)
 
 
-def to_crib(tests):
+def to_crib(tests) -> str:
     """Shorten tests for crib."""
     questions = min_diff([t.question for t in tests])
     result = list()
@@ -886,7 +890,7 @@ def to_crib(tests):
         result.append(
             "{}: {}".format(question, ", ".join(min_diff(sorted(test.correct()))))
         )
-    return "\n".join(result)
+    return "\n".join(result) + "\n"
 
 
 def load_files(files):
