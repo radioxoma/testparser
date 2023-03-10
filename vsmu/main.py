@@ -13,6 +13,7 @@ import zipfile
 from collections import OrderedDict
 from itertools import zip_longest
 import html
+
 # try:
 #     from lxml import etree
 # except ImportError:
@@ -52,12 +53,17 @@ class Question(object):
         if self.image_path:
             info += f"@ {self.image_path}\n"
         for v, c in self.answers.items():
-            info += '{} {}\n'.format('+' if c else '-', v)
+            info += "{} {}\n".format("+" if c else "-", v)
         return info
 
     def __hash__(self):
-        return hash((self.question_generalized, self.image_path, tuple(
-            sorted(self.answers_generalized.items()))))
+        return hash(
+            (
+                self.question_generalized,
+                self.image_path,
+                tuple(sorted(self.answers_generalized.items())),
+            )
+        )
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -66,7 +72,8 @@ class Question(object):
             return False
         if not self.image_path == other.image_path:
             return False
-        if not self.answers_generalized == other.answers_generalized:  # Answers with True/False mark
+        # Answers with True/False mark
+        if not self.answers_generalized == other.answers_generalized:
             return False
         # if not self.answers_generalized.keys() == other.answers_generalized.keys():  # Answers only
         #    return False
@@ -87,11 +94,15 @@ class Question(object):
         """
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
-        variant = variant.strip(';,. ')
+        variant = variant.strip(";,. ")
         if variant in self.answers:
-            warnings.warn(f"Question '{self.question}' already has this variant: '{variant}'")
+            warnings.warn(
+                f"Question '{self.question}' already has this variant: '{variant}'"
+            )
             if self.answers[variant]:
-                warnings.warn(f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}")
+                warnings.warn(
+                    f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}"
+                )
                 return
         self.answers[variant] = correct
 
@@ -115,8 +126,7 @@ class Question(object):
         self.image_path = im_path
 
     def correct(self):
-        """Return only correct answers.
-        """
+        """Return only correct answers."""
         correct = list()
         for v, c in self.answers.items():
             if c:
@@ -129,10 +139,11 @@ class Question(object):
 
     @property
     def question_generalized(self):
-        """Question stripped of meaningless symbols for comparison.
-        """
+        """Question stripped of meaningless symbols for comparison."""
         if not self.__cache_gen_question:
-            self.__cache_gen_question = self.question.casefold().strip(self.__strip_compare)
+            self.__cache_gen_question = self.question.casefold().strip(
+                self.__strip_compare
+            )
         return self.__cache_gen_question
 
     @property
@@ -163,9 +174,8 @@ def clear(strlist):
 
 
 def rmsp(s):
-    """Replace multiple spaces with one.
-    """
-    return re.sub(r"\ +", ' ', s.strip())
+    """Replace multiple spaces with one."""
+    return re.sub(r"\ +", " ", s.strip())
 
 
 def short(text, count_stripped=False):
@@ -175,6 +185,7 @@ def short(text, count_stripped=False):
     >>> short('Something wrong with compatibility regressions.'.split(), True)
     u'Som4ng wrong with com8ty reg7s.'
     """
+
     def sh(word):
         l = len(word)
         if l > 7:
@@ -184,6 +195,7 @@ def short(text, count_stripped=False):
                 return "{}-{}".format(word[:3], word[-2:])
         else:
             return word
+
     return " ".join(map(sh, text))
 
 
@@ -202,7 +214,7 @@ def min_diff(strlist):
         if strlist[-2] in strlist[-1]:
             prelast = strlist[-2].split()
             last = strlist.pop().split()
-            prelast_word_plus = last[:len(prelast) + 1]  # + 1 different word
+            prelast_word_plus = last[: len(prelast) + 1]  # + 1 different word
             questions.append(short(prelast_word_plus))
         else:
             questions.append(short(strlist.pop().split()))
@@ -211,8 +223,7 @@ def min_diff(strlist):
 
 
 def duplicates(tests):
-    """Return question duplicates.
-    """
+    """Return question duplicates."""
     dup = set()
     seen = set()
     for q in tests:
@@ -256,7 +267,7 @@ def parse_gift(filename):
             Q = Question(match.group(2).strip())
             for choice in re.finditer(split_choiсes, match.group(3)):
                 answer = choice.group(2).strip()
-                valid = choice.group(1).strip() == '='
+                valid = choice.group(1).strip() == "="
                 Q.add_one_answer(answer, valid)
         questions.append(Q)
     return questions
@@ -279,7 +290,9 @@ def parse_do(filename):
 
     multichoice = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in multichoice:
-        test_question = ' '.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
+        test_question = " ".join(
+            clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()"))
+        )
         Q = Question(test_question)
         img = test.xpath(".//div[@class='content']/div[@class='qtext']//img")
         if img:
@@ -291,17 +304,23 @@ def parse_do(filename):
             #     Q.add_image_path(abs_im_path.decode('utf-8'))
             # else:
             #     raise ValueError("Image not exists: {}".format(im_path))
-            Q.add_image_path(img[0].get('src'))
+            Q.add_image_path(img[0].get("src"))
         ## Answers
-        choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()")
+        choices = test.xpath(
+            "./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()"
+        )
         test_choices = clear(choices)
-        correct = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']")
+        correct = test.xpath(
+            "./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/img[@class='icon']"
+        )
         if len(test_choices) != len(correct):
-            warnings.warn(f"Number of variants does not match with number of correct answers '{Q}'")
+            warnings.warn(
+                f"Number of variants does not match with number of correct answers '{Q}'"
+            )
         for C, A in zip_longest(correct, test_choices):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                Q.add_one_answer(A, C.attrib['alt'] == 'Верно')
+                Q.add_one_answer(A, C.attrib["alt"] == "Верно")
             else:
                 Q.add_one_answer(A, False)
         questions.append(Q)
@@ -311,40 +330,52 @@ def parse_do(filename):
     for test in multianswer:
         raise NotImplementedError("No export. Testing needed.")
         # Название теста
-        test_question = ' {?} '.join(clear(test.xpath("./div[@class='content']/div[@class='ablock clearfix']//text()")))
+        test_question = " {?} ".join(
+            clear(
+                test.xpath(
+                    "./div[@class='content']/div[@class='ablock clearfix']//text()"
+                )
+            )
+        )
         # print('# %s' % test_question.encode('utf-8'))
         Q = Question(test_question)
 
         # Варианты ответа (несколько label).
         # Этот элемент изначально был написан но закомментирован.
         # Показывает варианта ответа к вопросам с картинками. Были ошибки?
-        test_choices = test.xpath("./div[@class='content']/div[@class='ablock clearfix']//label//option//text()")
+        test_choices = test.xpath(
+            "./div[@class='content']/div[@class='ablock clearfix']//label//option//text()"
+        )
         for t in test_choices:
-            print(t.encode('utf-8'))
+            print(t.encode("utf-8"))
 
         # Правильный ответ (ниспадающее меню)
-        answer2 = test.xpath("./div[@class='content']/div[@class='ablock clearfix']//*[@onmouseover]")
+        answer2 = test.xpath(
+            "./div[@class='content']/div[@class='ablock clearfix']//*[@onmouseover]"
+        )
         for answ in answer2:
-            this = answ.get('onmouseover')
+            this = answ.get("onmouseover")
             # print(this.encode('UTF-8'))
-            rp = re.compile('Правильный ответ: (.+?)<\/div>', re.UNICODE)
+            rp = re.compile("Правильный ответ: (.+?)<\/div>", re.UNICODE)
             test_correct = re.search(rp, this).group(1)
-            print("Правильно: '%s'" % test_correct.encode('UTF-8'))
+            print("Правильно: '%s'" % test_correct.encode("UTF-8"))
 
         # Обоснование ответа
         # theory = '\n'.join(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")).strip()
         # print(theory.encode('utf-8'))
 
-        print('')
+        print("")
 
     ###########################################################################
     match = doc.xpath(".//div[@class='que match clearfix']")
     for test in match:
         raise NotImplementedError("Testing needed")
         # Название теста
-        test_question = ''.join(clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()")))
-        print('# %s' % test_question.encode('utf-8'))
-        print('*Match не готов (выводим теорию)*')
+        test_question = "".join(
+            clear(test.xpath("./div[@class='content']/div[@class='qtext']//text()"))
+        )
+        print("# %s" % test_question.encode("utf-8"))
+        print("*Match не готов (выводим теорию)*")
 
         # Пункты
         # tvars = test.xpath("./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']/tr/td/text()")
@@ -355,17 +386,22 @@ def parse_do(filename):
         # Не могу найти ответы, так что выведем теорию.
 
         # Обоснование ответа
-        theory = ' '.join(clear(test.xpath("./div[@class='content']/div[@class='generalfeedback']//text()")))
-        print(theory.encode('utf-8'))
+        theory = " ".join(
+            clear(
+                test.xpath(
+                    "./div[@class='content']/div[@class='generalfeedback']//text()"
+                )
+            )
+        )
+        print(theory.encode("utf-8"))
 
-        print('')
+        print("")
 
     return questions
 
 
 def parse_evsmu(filename):
-    """e-vsmu.by Moodle tests parser.
-    """
+    """e-vsmu.by Moodle tests parser."""
     doc = lxml.html.parse(filename).getroot()
 
     questions = list()
@@ -374,24 +410,32 @@ def parse_evsmu(filename):
         ## Question
         qwe = test.xpath('.//div[@class="qtext22"]')
         textQuestion = qwe[0].text_content().strip()
-        Q = Question(' '.join(textQuestion.split()))
+        Q = Question(" ".join(textQuestion.split()))
         ## Answers
-        correct = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]')
+        correct = test.xpath(
+            './/div[@class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]'
+        )
         answ_divs = test.xpath('.//div[@class="ablock clearfix"]/table/tr/td/label/div')
         answers = [a.text_content().strip()[3:] for a in answ_divs]
         if len(answers) != len(correct):
-            warnings.warn(f"Number of variants does not match with number of correct answers '{Q}'")
+            warnings.warn(
+                f"Number of variants does not match with number of correct answers '{Q}'"
+            )
         for C, A in zip_longest(correct, answers):
             # `C` is None if correct answer is not provided by page
             if C is not None:
-                Q.add_one_answer(A, C.attrib['alt'] == 'Верно')
+                Q.add_one_answer(A, C.attrib["alt"] == "Верно")
             else:
                 Q.add_one_answer(A, False)
         questions.append(Q)
     # These questions don't contain correct answers, so we skip them
     content = doc.xpath(".//div[@class='que match clearfix']")
     if content:
-        print("Warning: {} 'que match clearfix' tests couldn't be parsed.".format(len(content)))
+        print(
+            "Warning: {} 'que match clearfix' tests couldn't be parsed.".format(
+                len(content)
+            )
+        )
     return questions
 
 
@@ -416,7 +460,7 @@ def parse_mytestx(filename):
     Q = None
     with open(filename) as f:
         for line in f:
-            line = line.replace('\t', ' ').strip()
+            line = line.replace("\t", " ").strip()
             if not line or line.startswith("//"):  # Ignore empty and comments
                 continue
             if line.startswith("#"):
@@ -441,49 +485,53 @@ def parse_rmanpo(filename):
     Note that in the case of 'д' answer fifth choice will always be
     set to True, if exists.
     """
+
     def iterate_stripped(iter):
         for line in iter:
             yield rmsp(line)
 
     # Матрица ответов (кому это вообще в голову пришло?)
     corr_matrix_bool = {
-        'а': [True, True, True],             # 1, 2 и 3
-        'б': [True, False, True],            # 1 и 3
-        'в': [False, True, False, True],     # 2 и 4
-        'г': [False, False, False, True],    # 4
-        'д': [True, True, True, True]  # 1,2,3,4 up to 5, see appending below
+        "а": [True, True, True],  # 1, 2 и 3
+        "б": [True, False, True],  # 1 и 3
+        "в": [False, True, False, True],  # 2 и 4
+        "г": [False, False, False, True],  # 4
+        "д": [True, True, True, True],  # 1,2,3,4 up to 5, see appending below
     }
     corr_matrix = {
-        'а': '1, 2, 3',
-        'б': '1 и 3',
-        'в': '2 и 4',
-        'г': '4',
-        'д': '1,2,3,4,5 или 1,2,3,4'}
+        "а": "1, 2, 3",
+        "б": "1 и 3",
+        "в": "2 и 4",
+        "г": "4",
+        "д": "1,2,3,4,5 или 1,2,3,4",
+    }
 
     questions = list()
     with open(filename) as f:
         istrip = iterate_stripped(f)
         for line in istrip:
             current_empty = not line
-            if '@@' in line:  # First question line
-                num_answer, postfix = line.split('@@')
+            if "@@" in line:  # First question line
+                num_answer, postfix = line.split("@@")
                 # Postfix contains text 'Задача@' or empty
-                cor_letter = num_answer.split('@')[-1].strip().casefold()
+                cor_letter = num_answer.split("@")[-1].strip().casefold()
                 if len(cor_letter) != 1:
                     # questions.append(Question(next(istrip).strip('@')))
-                    warnings.warn(f"Unsupported associative question type, skipping {line}")
+                    warnings.warn(
+                        f"Unsupported associative question type, skipping {line}"
+                    )
                     continue
                 valid = corr_matrix_bool[cor_letter]
                 line = next(istrip)  # Goto first question line
 
                 # Parse question
-                question = ''
+                question = ""
                 while not line[0].isdigit():
-                    question +=  line
+                    question += line
                     line = next(istrip)
                 # В тестах @ после условия
                 # В задачах @ перед условием
-                Q = Question(question.strip('@ '))
+                Q = Question(question.strip("@ "))
 
                 # Parse choices
                 choices = list()
@@ -491,14 +539,16 @@ def parse_rmanpo(filename):
                 while line and line[0].isdigit():
                     i += 1
                     if int(line[0]) != i:
-                        raise ValueError(f"Wrong choice enumeration in question '{question}'")
+                        raise ValueError(
+                            f"Wrong choice enumeration in question '{question}'"
+                        )
                     choices.append(line[2:].strip())
                     line = next(istrip)
 
                 # As 'д' question can have 4 or 5 choices, corr_matrix_bool
                 # contains 4 by default.
                 # Appending fifth True for questions with 5 choices here.
-                if cor_letter == 'д' and len(valid) < 5:
+                if cor_letter == "д" and len(valid) < 5:
                     valid.append(True)
 
                 if len(choices) < len(valid):
@@ -529,13 +579,13 @@ def parse_raw(filename):
     with open(filename) as f:
         for line in f:
             try:
-                if line.isspace() or line.startswith('#'):
+                if line.isspace() or line.startswith("#"):
                     continue
                 elif line[0].isdigit():
                     if Q is not None:
                         questions.append(Q)
                     Q = Question(re.search(ptn_question, line).group(2))
-                elif line.startswith('+'):
+                elif line.startswith("+"):
                     Q.add_one_answer(re.search(ptn_answer, line).group(2), True)
                 else:
                     Q.add_one_answer(re.search(ptn_answer, line).group(2), False)
@@ -571,13 +621,17 @@ def parse_raw2(filename):
     for match in re.finditer(pattern, text):
         Q = Question(match.group(2).strip())
         valid = match.group(3).strip()
-        choices = match.group(4).strip().split('\n')
+        choices = match.group(4).strip().split("\n")
         for letter, choice in zip(letters, choices):
             # Catch missing choices by АБВГДЕ increment at string beginning
             if not letter == choice[0]:
-                warnings.warn(f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'")
-            if not choice[1:].startswith('. '):
-                warnings.warn(f"Choice not begging with '<letter>. ' '{match.group(0)}'")
+                warnings.warn(
+                    f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'"
+                )
+            if not choice[1:].startswith(". "):
+                warnings.warn(
+                    f"Choice not begging with '<letter>. ' '{match.group(0)}'"
+                )
             Q.add_one_answer(choice[3:], valid == choice[0])
         if not Q.correct():
             warnings.warn(f"No valid answer for a question '{match.group(0)}'")
@@ -616,18 +670,24 @@ def parse_raw3(filename):
 
     # Iterate in parallel by questions and valid answers
     questions = list()
-    for match_question, match_answer in zip(re.finditer(pattern_question, text), re.finditer(pattern_valid, text)):
+    for match_question, match_answer in zip(
+        re.finditer(pattern_question, text), re.finditer(pattern_valid, text)
+    ):
         Q = Question(match_question.group(2).strip())
         assert match_question.group(1) == match_answer.group(1)  # Question number
         valid = match_answer.group(2).casefold()
-        choices = match_question.group(3).strip().split('\n')
+        choices = match_question.group(3).strip().split("\n")
         for letter, choice in zip(letters, choices):
             choice = choice.strip()
             # Catch missing choices by АБВГДЕ increment at string beginning
             if not letter == choice[0]:
-                warnings.warn(f"Invalid АБВГДЕ increment, check newlines '{match_question.group(0)}'")
-            if not choice[1:].startswith(') '):
-                warnings.warn(f"Choice not begging with '<letter>) ' '{match_question.group(0)}'")
+                warnings.warn(
+                    f"Invalid АБВГДЕ increment, check newlines '{match_question.group(0)}'"
+                )
+            if not choice[1:].startswith(") "):
+                warnings.warn(
+                    f"Choice not begging with '<letter>) ' '{match_question.group(0)}'"
+                )
             Q.add_one_answer(choice[3:], valid == choice[0])
         # if not Q.correct():
         #     warnings.warn(f"No valid answer for a question '{match_question.group(0)}'")
@@ -644,7 +704,8 @@ def parse_blocks(filename):
 
     This has been used for a text layer from an PDF file.
     """
-    def resplit(sequence, delimiter=';'):
+
+    def resplit(sequence, delimiter=";"):
         """Join strings and split them again at given delimiter.
 
         For multiline text block with excessive newlines, but each
@@ -661,7 +722,7 @@ def parse_blocks(filename):
         for string in sequence:
             parts.append(string)
             if string.endswith(delimiter):
-                out.append(' '.join(parts)[:-1])
+                out.append(" ".join(parts)[:-1])
                 parts = list()
         return out
 
@@ -676,15 +737,25 @@ def parse_blocks(filename):
         if not current_empty:
             if previous_empty:  # Start of the new text block
                 if even:
-                    Q.add_multiple_answers(resplit(parts), [False,])
+                    Q.add_multiple_answers(
+                        resplit(parts),
+                        [
+                            False,
+                        ],
+                    )
                     questions.append(Q)
                 else:
-                    Q = Question(' '.join(parts))
+                    Q = Question(" ".join(parts))
                 parts = list()
                 even = not even
             parts.append(line)
         previous_empty = current_empty
-    Q.add_multiple_answers(resplit(parts), [False,])
+    Q.add_multiple_answers(
+        resplit(parts),
+        [
+            False,
+        ],
+    )
     questions.append(Q)
     return questions
 
@@ -704,13 +775,13 @@ def parse_geetest_epub(filename):
     questions = list()
     for p in tree.iterfind(".//xhtml:body/xhtml:p", ns):
         if p.attrib:
-            if p.attrib['class'] == 'question':
+            if p.attrib["class"] == "question":
                 if Q is not None:
                     questions.append(Q)
                 Q = Question(re.sub(strip_num, "", p.text))
-            elif p.attrib['class'] == 'false':
+            elif p.attrib["class"] == "false":
                 Q.add_one_answer(p.text[7:], False)
-            elif p.attrib['class'] == '':
+            elif p.attrib["class"] == "":
                 Q.add_one_answer(p.text[7:], True)
     questions.append(Q)
     return questions
@@ -733,25 +804,31 @@ def parse_imsqti_v2p1(filename):
     http://www.imsglobal.org/question/index.html
     pyslet https://gist.github.com/lsloan/1ba7539d097f9c622054c8e83a241297
     """
+
     def strip(s):
-        return s.replace(' ', ' ').replace('  ', ' ').replace('<!--2-->', '').strip()
+        return s.replace(" ", " ").replace("  ", " ").replace("<!--2-->", "").strip()
 
     questions = list()
     ns = {"imsqti_v2p1": "http://www.imsglobal.org/xsd/imsqti_v2p1"}
     tree = etree.ElementTree(file=filename).getroot()
     # Test file type by namespace (no API for that)
-    if not re.match(r'\{(.*?)\}', tree.tag).group(1) in ns.values():
+    if not re.match(r"\{(.*?)\}", tree.tag).group(1) in ns.values():
         print(f"Skipping XML '{filename}' due to namespace mismatch")
         return questions
     if not tree.find(".//imsqti_v2p1:responseDeclaration", ns):
         print(f"Skipping XML '{filename}': test content not found")
         return questions
-    valid = tree.find(".//imsqti_v2p1:responseDeclaration/imsqti_v2p1:correctResponse/imsqti_v2p1:value", ns).text
-    question = html.unescape(tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:prompt", ns).text)
+    valid = tree.find(
+        ".//imsqti_v2p1:responseDeclaration/imsqti_v2p1:correctResponse/imsqti_v2p1:value",
+        ns,
+    ).text
+    question = html.unescape(
+        tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:prompt", ns).text
+    )
     image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
 
     # Both question and variant 'identifier' increase monotonically
-    title = strip(lxml.html.fromstring(tree.get('title')).text_content())
+    title = strip(lxml.html.fromstring(tree.get("title")).text_content())
     question = strip(lxml.html.fromstring(question).text_content())
 
     # Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
@@ -760,18 +837,20 @@ def parse_imsqti_v2p1(filename):
     else:
         Q = Question(f"{tree.get('identifier')} {title} {question}")
     if image_src is not None:
-        Q.add_image_path(image_src.get('src'))
-    for choice in tree.iterfind(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns):
+        Q.add_image_path(image_src.get("src"))
+    for choice in tree.iterfind(
+        ".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns
+    ):
         # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
         c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
-        Q.add_one_answer(c, valid == choice.get('identifier'))
+        Q.add_one_answer(c, valid == choice.get("identifier"))
     Q.sort_answers()
     questions.append(Q)
     # return sorted(questions, key=lambda k: k.question)
     return questions
 
 
-def to_anki(tests):
+def to_anki(tests: list[Question]) -> str:
     """Export to Anki TSV format (UTF-8, tab delimiter, HTML).
 
     Most reliable way to generate multichoice quiz flashcards for Anki:
@@ -789,32 +868,29 @@ def to_anki(tests):
             if c:
                 # html ol li wasn't used to allow usage of arbitrary
                 # answer number in correct answers list.
-                cor_answ += f'{n}. {v}<br>'
-        all_answ += '</div>'
-        cor_answ += '</div>'
+                cor_answ += f"{n}. {v}<br>"
+        all_answ += "</div>"
+        cor_answ += "</div>"
         # Anki autodetects separator in first line
         # Newlines must be replaced with <br> tag
         # Don't use trailing tab: it's needed only for tags.
         tsv.append(f"{q.question}<br>{all_answ}\t{cor_answ}\n")
-    return ''.join(tsv)
+    return "".join(tsv)
 
 
 def to_crib(tests):
-    """Shorten tests for crib.
-    """
+    """Shorten tests for crib."""
     questions = min_diff([t.question for t in tests])
     result = list()
     for question, test in zip(questions, tests):
         result.append(
-            "{}: {}".format(
-                question,
-                ', '.join(min_diff(sorted(test.correct())))))
+            "{}: {}".format(question, ", ".join(min_diff(sorted(test.correct()))))
+        )
     return "\n".join(result)
 
 
 def load_files(files):
-    """Parse all files from a list.
-    """
+    """Parse all files from a list."""
     tests = list()
     for filename in files:
         if filename.endswith("gift.txt"):
@@ -847,12 +923,13 @@ def load_files(files):
 
 
 def solve(answered_list, to_solve):
-    """Search unknown tests in collection of answered.
-    """
+    """Search unknown tests in collection of answered."""
     answered_unique = set(filter(None, answered_list))  # Remove unanswered tests
     unsolved_unique = set(to_solve)
     unsolved_count = len([k for k in unsolved_unique if not k])
-    print(f"Solving: {len(to_solve)}, unique {len(unsolved_unique)}, without answer {unsolved_count}")
+    print(
+        f"Solving: {len(to_solve)}, unique {len(unsolved_unique)}, without answer {unsolved_count}"
+    )
 
     solved = list()
     for unsolved in to_solve:
@@ -860,8 +937,11 @@ def solve(answered_list, to_solve):
             solved.append(unsolved)
             continue
         for answered in answered_unique:
-            if (unsolved.question_generalized == answered.question_generalized and
-                unsolved.answers_generalized.keys() == answered.answers_generalized.keys()):
+            if (
+                unsolved.question_generalized == answered.question_generalized
+                and unsolved.answers_generalized.keys()
+                == answered.answers_generalized.keys()
+            ):
                 solved.append(answered)
                 break
     print(f"{len(solved)}/{unsolved_count} tests found")
@@ -869,30 +949,50 @@ def solve(answered_list, to_solve):
 
 
 def main():
-    """Define parser, collect questions.
-    """
+    """Define parser, collect questions."""
     parser = argparse.ArgumentParser(
         description=__description__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", nargs="+", help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'blocks.txt', 'geetest.epub'). Multiple files will be concatenated.")
-    parser.add_argument("-u", "--unify", action='store_true', help="Remove duplicates")
-    parser.add_argument("-d", "--duplicates", action='store_true', help="Print duplicates")
-    parser.add_argument("-p", action='store_true', help="Print parsed tests in STDOUT in MyTestX format")
-    parser.add_argument("-s", "--sort", action='store_true', help="Sort tests")
-    parser.add_argument("--solve", nargs="+", help="Populate this file with answers from 'input'")
-    parser.add_argument("--has-answer", action='store_true', help="Remove questions without answer")
-    parser.add_argument("--to-mytestx", help="Save human-readable plain text with \\r\\n. Can be imported in http://mytest.klyaksa.net https://irenproject.ru")
-    parser.add_argument("--to-anki", help="Save as tab-formatted text file for import in Anki cards https://apps.ankiweb.net/")
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "input",
+        nargs="+",
+        help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'blocks.txt', 'geetest.epub'). Multiple files will be concatenated.",
+    )
+    parser.add_argument("-u", "--unify", action="store_true", help="Remove duplicates")
+    parser.add_argument(
+        "-d", "--duplicates", action="store_true", help="Print duplicates"
+    )
+    parser.add_argument(
+        "-p", action="store_true", help="Print parsed tests in STDOUT in MyTestX format"
+    )
+    parser.add_argument("-s", "--sort", action="store_true", help="Sort tests")
+    parser.add_argument(
+        "--solve", nargs="+", help="Populate this file with answers from 'input'"
+    )
+    parser.add_argument(
+        "--has-answer", action="store_true", help="Remove questions without answer"
+    )
+    parser.add_argument(
+        "--to-mytestx",
+        help="Save human-readable plain text with \\r\\n. Can be imported in http://mytest.klyaksa.net https://irenproject.ru",
+    )
+    parser.add_argument(
+        "--to-anki",
+        help="Save as tab-formatted text file for import in Anki cards https://apps.ankiweb.net/",
+    )
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
     args = parser.parse_args()
 
     tests = load_files(args.input)
     tests_unique = set(tests)
     dup = duplicates(tests)
-    print(f"Total parsed: {len(tests)}, unique {len(tests_unique)}, appears multiple times: {len(dup)}")
+    print(
+        f"Total parsed: {len(tests)}, unique {len(tests_unique)}, appears multiple times: {len(dup)}"
+    )
 
     if args.duplicates:
-        print('\n'.join([str(k) for k in dup]))
+        print("\n".join([str(k) for k in dup]))
 
     if args.solve:
         print("Output will contain only tests, passed to '--solve'")
@@ -909,19 +1009,17 @@ def main():
 
     # Output
     if args.p:
-        print('\n'.join([str(k) for k in tests]))
+        print("\n".join([str(k) for k in tests]))
     if args.to_mytestx:
-        with open(args.to_mytestx, mode='w', encoding='utf-8',
-            newline='\r\n') as f:
-            f.write('\n'.join([str(k) for k in tests]))
+        with open(args.to_mytestx, mode="w", encoding="utf-8", newline="\r\n") as f:
+            f.write("\n".join([str(k) for k in tests]))
     if args.to_anki:
-        with open(args.to_anki, mode='w', encoding='utf-8') as f:
+        with open(args.to_anki, mode="w", encoding="utf-8") as f:
             f.write(to_anki(tests))
     if args.to_crib:
-        with open(args.to_crib, mode='w', encoding='utf-8',
-            newline='\r\n') as f:
+        with open(args.to_crib, mode="w", encoding="utf-8", newline="\r\n") as f:
             f.write(to_crib(tests))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

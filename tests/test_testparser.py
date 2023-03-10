@@ -1,19 +1,15 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
+import io
 import os
 import sys
-import io
 import unittest
+
 from vsmu import main as testparser
 
 curdir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, curdir + '/../')
-sys.path.insert(0, curdir + '/../vsmu')
+sys.path.insert(0, curdir + "/../")
+sys.path.insert(0, curdir + "/../vsmu")
 
 
 class TestEvsmu(unittest.TestCase):
@@ -25,8 +21,10 @@ class TestEvsmu(unittest.TestCase):
         self.quiz_evsmu.sort(key=lambda q: q.question.casefold())
 
     def test_evsmu_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'evsmu/g495_mytestx.txt')) as f:
-            for a, b in zip(f.read().split(), testparser.to_mytestx(self.quiz_evsmu).split()):
+        with open(os.path.join(curdir, "evsmu/g495_mytestx.txt")) as f:
+            for a, b in zip(
+                f.read().split(), "\n".join([str(k) for k in self.quiz_evsmu]).split()
+            ):
                 try:
                     self.assertEqual(a, b)
                 except:
@@ -35,11 +33,11 @@ class TestEvsmu(unittest.TestCase):
                     raise
 
     def test_evsmu_to_anki_output(self):
-        with io.open(os.path.join(curdir, 'evsmu/g495_anki.csv'), encoding='utf-8') as f:
+        with open(os.path.join(curdir, "evsmu/g495_anki.csv"), encoding="utf-8") as f:
             self.assertEqual(f.read(), testparser.to_anki(self.quiz_evsmu))
 
     def test_evsmu_to_crib_output(self):
-        with io.open(os.path.join(curdir, 'evsmu/g495_crib.txt'), encoding='utf-8') as f:
+        with open(os.path.join(curdir, "evsmu/g495_crib.txt"), encoding="utf-8") as f:
             self.assertEqual(f.read(), testparser.to_crib(self.quiz_evsmu))
 
 
@@ -56,32 +54,45 @@ class TestDo(unittest.TestCase):
 
 class TestMytestx(unittest.TestCase):
     def setUp(self):
-        self.quiz_mytestx = testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_sorted.txt"))
+        self.quiz_mytestx = testparser.parse_mytestx(
+            os.path.join(curdir, "mytestx/quiz_sorted.txt")
+        )
         self.quiz_mytestx.sort(key=lambda q: q.question.casefold())
 
         # Case with equal questions but different answers
         # Similar questions for shortener test
-        self.quiz_mytestx_guileful = list(set(testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_guileful.txt"))))
+        self.quiz_mytestx_guileful = list(
+            set(
+                testparser.parse_mytestx(
+                    os.path.join(curdir, "mytestx/quiz_guileful.txt")
+                )
+            )
+        )
         self.quiz_mytestx_guileful.sort(key=lambda q: q.question.casefold())
 
     def test_mytestx_parser(self):
-        mytestx = testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_unsorted.txt"))
+        mytestx = testparser.parse_mytestx(
+            os.path.join(curdir, "mytestx/quiz_unsorted.txt")
+        )
         self.assertEqual(set(self.quiz_mytestx), set(mytestx))
 
     def test_mytestx_parser_duplicates(self):
-        mytestx = testparser.parse_mytestx(os.path.join(curdir, "mytestx/quiz_unsorted_duplicates.txt"))
+        mytestx = testparser.parse_mytestx(
+            os.path.join(curdir, "mytestx/quiz_unsorted_duplicates.txt")
+        )
         self.assertEqual(set(self.quiz_mytestx), set(mytestx))
 
         # Assertion make sense only if total questions > 1
         self.assertNotEqual(
-            sorted(list(set(self.quiz_mytestx)),
-                key=lambda q: q.question.casefold()),
-            sorted(list(set(mytestx)),
-                key=lambda q: q.question.casefold(), reverse=True))
+            sorted(list(set(self.quiz_mytestx)), key=lambda q: q.question.casefold()),
+            sorted(
+                list(set(mytestx)), key=lambda q: q.question.casefold(), reverse=True
+            ),
+        )
 
     def test_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'mytestx/quiz_sorted.txt')) as f:
-            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz_mytestx))
+        with open(os.path.join(curdir, "mytestx/quiz_sorted.txt")) as f:
+            self.assertEqual(f.read(), "\n".join([str(k) for k in self.quiz_mytestx]))
 
 
 class TestRaw(unittest.TestCase):
@@ -89,9 +100,9 @@ class TestRaw(unittest.TestCase):
         self.quiz = testparser.parse_raw(os.path.join(curdir, "raw/raw.txt"))
 
     def test_to_mytestx_output(self):
-        with io.open(os.path.join(curdir, 'raw/raw.mytestx.txt')) as f:
-            self.assertEqual(f.read(), testparser.to_mytestx(self.quiz))
+        with open(os.path.join(curdir, "raw/raw.mytestx.txt")) as f:
+            self.assertEqual(f.read(), "\n".join([str(k) for k in self.quiz]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
