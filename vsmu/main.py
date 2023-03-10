@@ -6,9 +6,7 @@ Test quiz parser and converter
 
 import argparse
 import html
-import io
 import re
-import textwrap
 import warnings
 
 try:
@@ -190,10 +188,10 @@ def short(text: str, count_stripped: bool = False) -> str:
     """
 
     def sh(word):
-        l = len(word)
-        if l > 7:
+        wl = len(word)
+        if wl > 7:
             if count_stripped:
-                return "{}{}{}".format(word[:3], l - 5, word[-2:])
+                return "{}{}{}".format(word[:3], wl - 5, word[-2:])
             else:
                 return "{}-{}".format(word[:3], word[-2:])
         else:
@@ -308,7 +306,7 @@ def parse_do(filename):
             # else:
             #     raise ValueError("Image not exists: {}".format(im_path))
             Q.add_image_path(img[0].get("src"))
-        ## Answers
+        # Answers
         choices = test.xpath(
             "./div[@class='content']/div[@class='ablock clearfix']/table[@class='answer']//tr/td/label/text()"
         )
@@ -410,11 +408,11 @@ def parse_evsmu(filename):
     questions = list()
     content = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in content:
-        ## Question
+        # Question
         qwe = test.xpath('.//div[@class="qtext22"]')
         textQuestion = qwe[0].text_content().strip()
         Q = Question(" ".join(textQuestion.split()))
-        ## Answers
+        # Answers
         correct = test.xpath(
             './/div[@class="ablock clearfix"]/table/tr/td/label/div/img[attribute::class="icon"]'
         )
@@ -459,7 +457,6 @@ def parse_mytestx(filename):
     # i = re.compile("^(?<=^@).+(?=\s*$)")
     # v = re.compile("^[+-].+(?=\s*$)")
     questions = list()
-    first_question = True
     Q = None
     with open(filename) as f:
         for line in f:
@@ -501,19 +498,18 @@ def parse_rmanpo(filename):
         "г": [False, False, False, True],  # 4
         "д": [True, True, True, True],  # 1,2,3,4 up to 5, see appending below
     }
-    corr_matrix = {
-        "а": "1, 2, 3",
-        "б": "1 и 3",
-        "в": "2 и 4",
-        "г": "4",
-        "д": "1,2,3,4,5 или 1,2,3,4",
-    }
+    # corr_matrix = {
+    #     "а": "1, 2, 3",
+    #     "б": "1 и 3",
+    #     "в": "2 и 4",
+    #     "г": "4",
+    #     "д": "1,2,3,4,5 или 1,2,3,4",
+    # }
 
     questions = list()
     with open(filename) as f:
         istrip = iterate_stripped(f)
         for line in istrip:
-            current_empty = not line
             if "@@" in line:  # First question line
                 num_answer, postfix = line.split("@@")
                 # Postfix contains text 'Задача@' or empty
@@ -592,7 +588,7 @@ def parse_raw(filename):
                     Q.add_one_answer(re.search(ptn_answer, line).group(2), True)
                 else:
                     Q.add_one_answer(re.search(ptn_answer, line).group(2), False)
-            except:
+            except Exception:
                 print(f"'{line}'")
                 raise
 
@@ -741,13 +737,13 @@ def parse_blocks(filename):
         if not current_empty:
             if previous_empty:  # Start of the new text block
                 if even:
-                    Q.add_multiple_answers(
+                    Q.add_multiple_answers(  # noqa: F821
                         resplit(parts),
                         [
                             False,
                         ],
                     )
-                    questions.append(Q)
+                    questions.append(Q)  # noqa: F821
                 else:
                     Q = Question(" ".join(parts))
                 parts = list()

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import io
 import os
 import sys
 import unittest
@@ -27,7 +26,7 @@ class TestEvsmu(unittest.TestCase):
             ):
                 try:
                     self.assertEqual(a, b)
-                except:
+                except AssertionError:
                     print(a)
                     print(b)
                     raise
