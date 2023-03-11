@@ -46,6 +46,102 @@ Deck preset for tests:
 * Unescaped chars `<`, `>` breaks parser
 * `--to-crib` will have duplicates in case: same question, same right answers, different wrong answers
 
+
+## Test formats
+
+> tl;dr: for this program use MyTestX as storage/review format, export to Anki when necessary. UTF-8 is encoding by default. Images/media not supported.
+
+There are plenty _similar-but-not-the-same_ formats like Aiken, MyTestX, Iren. Search [Moodle Category:Questions](https://docs.moodle.org/401/en/Category:Questions) for widely accepted formats.
+
+#### Aiken
+
+https://docs.moodle.org/401/en/Aiken_format
+https://moodleanswers.com/index.php/quizzes/importing-aiken-formatted-questions
+
+    What colour are strawberries?
+    A. green
+    B. yellow
+    C. black
+    D. red
+    ANSWER: D
+
+    What does the A stand for in ACU?
+    A) Australian
+    B) Antarctic
+    C) Australasian
+    D) Angola
+    ANSWER: A
+
+
+#### MyTestX 10.2 (supported)
+Russian shareware. https://mytest.klyaksa.net/wiki/Импорт_тестов_MyTestXPro_из_других_форматов
+http://mytest.klyaksa.net
+
+    # An question
+    + Right answer
+    - False answer
+    + Another right answer
+    - Another false answer
+
+    # Second question
+    + Right answer
+    - False answer
+    + Another right answer
+    - Another false answer
+
+#### Iren
+
+Russian freeware
+https://irenproject.ru/konverter_testov_iz_tekstovyx_fajlov
+https://irenproject.ru
+
+    #
+    В центнерах измеряется:
+    + масса
+    - площадь
+    - объем
+    - давление
+
+    #
+    К единицам длины относится:
+    + метр
+    + миля
+    + дюйм
+    + ярд
+    - унция
+    - гектар
+
+    #
+    Килограмм сокращенно обозначается ***.
+    + кг
+
+#### Anki compatible CSV (supported, export only)
+
+#### Moodle import/[export](https://docs.moodle.org/401/en/Export_questions)
+
+    GIFT format (plain text)
+        https://en.wikipedia.org/wiki/GIFT_(file_format)
+    Moodle XML format
+
+#### Moodle [import](https://docs.moodle.org/401/en/Import_questions)
+    Blackboard (*.dat, *.zip) POOL, QTI
+    Embedded answers (Cloze)
+    Examview
+    Missing word format
+    WebCT format
+
+#### etc
+
+* IMS Question and Test Interoperability specification (QTI)
+    * XML-based format
+    * https://en.wikipedia.org/wiki/QTI
+    * https://www.imsglobal.org/activity/qtiapip
+    * https://pyslet.readthedocs.io/en/latest/imsqtiv2p1.html
+
+* pyslet https://readthedocs.org/projects/pyslet/
+* Yaml-based https://github.com/robbert-harms/ybe
+
+
 ## Command line tips
 
     $ libreoffice --headless --convert-to txt *  # Batch conversion to plaintext
