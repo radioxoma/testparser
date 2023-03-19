@@ -32,11 +32,12 @@ Check `testparser --help` for available formats and file extensions. See source 
 
 ### Anki
 
-Deck preset for tests:
+Default preset (20 new, 200 reviews/day, 8 leech threshold) exists for **short cards** you **don't know**. E.g. simplest atomic fact like a single foreign word.
+If you learn **bunch of tests** which you **should already know**, you need other preset. Deck preset for a multiple choice tests:
 
 * New cards per day 20 (default)
-* Maximum reviews/day 100 (200 by default)
-* Leech threshold 3 (8 by default)
+* Maximum reviews/day 100 (200 by default). Question review takes more time than review of a single word
+* Leech threshold 3 (8 by default). Suspend cards you keep on forgetting and don't waste time on them. If you keep forgetting things you already know, probably there is a problem with test itself
 
 
 ## Known issues
