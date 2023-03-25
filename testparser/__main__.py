@@ -164,7 +164,7 @@ class Question:
         return self.__cache_gen_answers
 
 
-def clear(strlist):
+def clear(strlist: list[str]) -> list[str]:
     """Remove empty strings and spaces from sequence.
 
     >>> clear(['123', '12', '', '2', '1', ''])
@@ -173,12 +173,12 @@ def clear(strlist):
     return list(filter(None, map(lambda x: x.strip(), strlist)))
 
 
-def rmsp(s):
+def rmsp(s: str) -> str:
     """Replace multiple spaces with one."""
     return re.sub(r"\ +", " ", s.strip())
 
 
-def short(text: str, count_stripped: bool = False) -> str:
+def short(text: list[str], count_stripped: bool = False) -> str:
     """Shorten str for crib.
 
     >>> short('Something wrong with compatibility regressions.'.split())
@@ -200,7 +200,7 @@ def short(text: str, count_stripped: bool = False) -> str:
     return " ".join(map(sh, text))
 
 
-def min_diff(strlist):
+def min_diff(strlist: list[str]) -> list[str]:
     """Return maximum shortened but distinguishable string list.
 
     Strings must be sorted already.
@@ -235,7 +235,7 @@ def duplicates(tests):
     return dup
 
 
-def parse_gift(filename):
+def parse_gift(filename: str) -> list[Question | None]:
     """Parse limited subset of Moodle gift format.
 
     * Each choice on newline
@@ -274,7 +274,7 @@ def parse_gift(filename):
     return questions
 
 
-def parse_do(filename):
+def parse_do(filename: str) -> list[Question | None]:
     """Parse Moodle tests from do.vsmu.by.
 
     Todo:
@@ -287,7 +287,7 @@ def parse_do(filename):
     .//*[@id='content']/div[@class='que multianswer clearfix'] выбрать из ниспадающего меню
     """
     doc = lxml.html.parse(filename).getroot()
-    questions = list()
+    questions: list[Question | None] = list()
 
     multichoice = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in multichoice:
@@ -401,11 +401,11 @@ def parse_do(filename):
     return questions
 
 
-def parse_evsmu(filename):
+def parse_evsmu(filename: str) -> list[Question | None]:
     """e-vsmu.by Moodle tests parser."""
     doc = lxml.html.parse(filename).getroot()
 
-    questions = list()
+    questions: list[Question | None] = list()
     content = doc.xpath(".//div[@class='que multichoice clearfix']")
     for test in content:
         # Question
@@ -440,7 +440,7 @@ def parse_evsmu(filename):
     return questions
 
 
-def parse_mytestx(filename):
+def parse_mytestx(filename: str) -> list[Question | None]:
     """Read text file in MyTestX format.
 
     Encoding used to be cp1251.
@@ -468,18 +468,18 @@ def parse_mytestx(filename):
                     questions.append(Q)
                 Q = Question(line[1:].strip())
             elif line.startswith("@"):
-                Q.add_image_path(line[1:].strip())
+                Q.add_image_path(line[1:].strip())  # type: ignore
             elif line.startswith("+"):
-                Q.add_one_answer(line[1:].strip(), True)
+                Q.add_one_answer(line[1:].strip(), True)  # type: ignore
             elif line.startswith("-"):
-                Q.add_one_answer(line[1:].strip(), False)
+                Q.add_one_answer(line[1:].strip(), False)  # type: ignore
             else:  # Interpret lines without markup as False choice
-                Q.add_one_answer(line, False)
+                Q.add_one_answer(line, False)  # type: ignore
         questions.append(Q)
     return questions
 
 
-def parse_rmanpo(filename):
+def parse_rmanpo(filename: str) -> list[Question | None]:
     """Reformat original RMANPO ICU test text 2019-03-12.
 
     Note that in the case of 'д' answer fifth choice will always be
@@ -506,7 +506,7 @@ def parse_rmanpo(filename):
     #     "д": "1,2,3,4,5 или 1,2,3,4",
     # }
 
-    questions = list()
+    questions: list[Question | None] = list()
     with open(filename) as f:
         istrip = iterate_stripped(f)
         for line in istrip:
@@ -583,11 +583,17 @@ def parse_raw(filename):
                 elif line[0].isdigit():
                     if Q is not None:
                         questions.append(Q)
-                    Q = Question(re.search(ptn_question, line).group(2))
+                    Q = Question(
+                        re.search(ptn_question, line).group(2)
+                    )  # typing: ignore
                 elif line.startswith("+"):
-                    Q.add_one_answer(re.search(ptn_answer, line).group(2), True)
+                    Q.add_one_answer(
+                        re.search(ptn_answer, line).group(2), True
+                    )  # typing: ignore
                 else:
-                    Q.add_one_answer(re.search(ptn_answer, line).group(2), False)
+                    Q.add_one_answer(
+                        re.search(ptn_answer, line).group(2), False
+                    )  # typing: ignore
             except Exception:
                 print(f"'{line}'")
                 raise
@@ -760,7 +766,7 @@ def parse_blocks(filename):
     return questions
 
 
-def parse_geetest_epub(filename):
+def parse_geetest_epub(filename: str) -> list[Question | None]:
     """https://geetest.ru/ parser.
 
     Currently XML export is broken, so parsing epub instead.
@@ -780,21 +786,18 @@ def parse_geetest_epub(filename):
                     questions.append(Q)
                 Q = Question(re.sub(strip_num, "", p.text))
             elif p.attrib["class"] == "false":
-                Q.add_one_answer(p.text[7:], False)
+                Q.add_one_answer(p.text[7:], False)  # type: ignore
             elif p.attrib["class"] == "":
-                Q.add_one_answer(p.text[7:], True)
+                Q.add_one_answer(p.text[7:], True)  # type: ignore
     questions.append(Q)
     return questions
 
 
-def parse_imsqti_v2p1(filename):
+def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
     """Parser for IMS QTI XML tests.
 
     Written for imsqti_v2p1, but looks like imsqti_v2p2 is supported too.
-    Used in Mirapolis LMS.
-
-    https://hr-dzm.mos.ru (тесты Московский врач).
-    You must have access to test (in testing attempt) to fetch XML.
+    Used in Mirapolis LMS https://hr-dzm.mos.ru (тесты Московский врач)
 
     c2123 - probably test id
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/103887-070b1d9b0-7962-4d40-9d3c-599fd7ecd7b6.jpg
@@ -803,20 +806,22 @@ def parse_imsqti_v2p1(filename):
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670085.xml - first existing
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670134.xml - last
 
-    IMS QTI test format https://en.wikipedia.org/wiki/QTI
-    http://www.imsglobal.org/question/index.html
-    pyslet https://gist.github.com/lsloan/1ba7539d097f9c622054c8e83a241297
+    References:
+        IMS QTI test format https://en.wikipedia.org/wiki/QTI
+        http://www.imsglobal.org/question/index.html
+        pyslet https://gist.github.com/lsloan/1ba7539d097f9c622054c8e83a241297
     """
 
     def strip(s):
         return s.replace(" ", " ").replace("  ", " ").replace("<!--2-->", "").strip()
 
-    questions = list()
+    questions: list[Question | None] = list()
     ns_name = "imsqti_v2p1"
     ns = {ns_name: f"http://www.imsglobal.org/xsd/{ns_name}"}
     tree = etree.ElementTree(file=filename).getroot()
     # Test file type by namespace (no API for that)
-    if not re.match(r"\{(.*?)\}", tree.tag).group(1) in ns.values():
+    xml_has_ns = re.match(r"\{(.*?)\}", tree.tag)
+    if xml_has_ns and not xml_has_ns.group(1) in ns.values():
         print(f"Skipping XML '{filename}' due to namespace mismatch")
         return questions
     if tree.find(f".//{ns_name}:responseDeclaration", ns) is None:
@@ -886,7 +891,7 @@ def to_anki(tests: list[Question]) -> str:
     return "".join(tsv)
 
 
-def to_crib(tests) -> str:
+def to_crib(tests: list[Question]) -> str:
     """Shorten tests for crib."""
     questions = min_diff([t.question for t in tests])
     result = list()
@@ -897,7 +902,7 @@ def to_crib(tests) -> str:
     return "\n".join(result) + "\n"
 
 
-def load_files(files):
+def load_files(files: list[str]) -> list[Question | None]:
     """Parse all files from a list."""
     tests = list()
     for filename in files:
@@ -930,7 +935,7 @@ def load_files(files):
     return tests
 
 
-def solve(answered_list, to_solve):
+def solve(answered_list: list[Question], to_solve: list[Question]) -> list[Question]:
     """Search unknown tests in collection of answered."""
     answered_unique = set(filter(None, answered_list))  # Remove unanswered tests
     unsolved_unique = set(to_solve)
