@@ -788,7 +788,10 @@ def parse_geetest_epub(filename):
 
 
 def parse_imsqti_v2p1(filename):
-    """Parser for Mirapolis LMS.
+    """Parser for IMS QTI XML tests.
+
+    Written for imsqti_v2p1, but looks like imsqti_v2p2 is supported too.
+    Used in Mirapolis LMS.
 
     https://hr-dzm.mos.ru (тесты Московский врач).
     You must have access to test (in testing attempt) to fetch XML.
@@ -809,23 +812,27 @@ def parse_imsqti_v2p1(filename):
         return s.replace(" ", " ").replace("  ", " ").replace("<!--2-->", "").strip()
 
     questions = list()
-    ns = {"imsqti_v2p1": "http://www.imsglobal.org/xsd/imsqti_v2p1"}
+    ns_name = "imsqti_v2p1"
+    ns = {ns_name: f"http://www.imsglobal.org/xsd/{ns_name}"}
     tree = etree.ElementTree(file=filename).getroot()
     # Test file type by namespace (no API for that)
     if not re.match(r"\{(.*?)\}", tree.tag).group(1) in ns.values():
         print(f"Skipping XML '{filename}' due to namespace mismatch")
         return questions
-    if not tree.find(".//imsqti_v2p1:responseDeclaration", ns):
+    if tree.find(f".//{ns_name}:responseDeclaration", ns) is None:
         print(f"Skipping XML '{filename}': test content not found")
         return questions
-    valid = tree.find(
-        ".//imsqti_v2p1:responseDeclaration/imsqti_v2p1:correctResponse/imsqti_v2p1:value",
-        ns,
-    ).text
+    valid = [
+        k.text
+        for k in tree.findall(
+            f".//{ns_name}:responseDeclaration/{ns_name}:correctResponse/{ns_name}:value",
+            ns,
+        )
+    ]
     question = html.unescape(
-        tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:prompt", ns).text
+        tree.find(f".//{ns_name}:choiceInteraction/{ns_name}:prompt", ns).text
     )
-    image_src = tree.find(".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:img", ns)
+    image_src = tree.find(f".//{ns_name}:choiceInteraction/{ns_name}:img", ns)
 
     # Both question and variant 'identifier' increase monotonically
     title = strip(lxml.html.fromstring(tree.get("title")).text_content())
@@ -838,12 +845,13 @@ def parse_imsqti_v2p1(filename):
         Q = Question(f"{tree.get('identifier')} {title} {question}")
     if image_src is not None:
         Q.add_image_path(image_src.get("src"))
+
     for choice in tree.iterfind(
-        ".//imsqti_v2p1:choiceInteraction/imsqti_v2p1:simpleChoice", ns
+        f".//{ns_name}:choiceInteraction/{ns_name}:simpleChoice", ns
     ):
         # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
         c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
-        Q.add_one_answer(c, valid == choice.get("identifier"))
+        Q.add_one_answer(c, choice.get("identifier") in valid)
     Q.sort_answers()
     questions.append(Q)
     # return sorted(questions, key=lambda k: k.question)

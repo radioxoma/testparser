@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assessmentItem
+	xmlns="http://www.imsglobal.org/xsd/imsqti_v2p1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.imsglobal.org/xsd/imsqti_v2p1 http://www.imsglobal.org/xsd/imsqti_v2p1.xsd"
+	identifier="TQ$1670105"
+	title="103887"
+	adaptive="false"
+	timeDependent="false"
+	toolName="lmsOnline"
+    commentLength="10000"
+	    	 order="1" 	>
+	<responseDeclaration identifier="RESPONSE" cardinality="single" baseType="identifier">
+		<correctResponse>
+																							<value>A$7308794</value>
+												</correctResponse>
+			</responseDeclaration>
+	<outcomeDeclaration identifier="SCORE" cardinality="single" baseType="float">
+		<defaultValue>
+			<value>1.0</value>
+		</defaultValue>
+	</outcomeDeclaration>
+	<outcomeDeclaration identifier="NEUTRAL" cardinality="single" baseType="float">
+		<defaultValue>
+			<value>0</value>
+		</defaultValue>
+	</outcomeDeclaration>
+	<outcomeDeclaration identifier="LMS_FEEDBACK" cardinality="single" baseType="identifier"/>
+	<outcomeDeclaration identifier="ANSWER_FEEDBACK" cardinality="single" baseType="identifier"/>
+		<itemBody>
+		<choiceInteraction responseIdentifier="RESPONSE" shuffle="true" maxChoices="1"
+		answerColumn="1" allowAnswerComment="false" >
+			<prompt><![CDATA[&lt;!--2--&gt;&lt;p dir=&quot;ltr&quot; style=&quot;text-align:left;&quot;&gt;&lt;/p&gt;&lt;p&gt;Больная 38 лет находится на лечении в ОРИТ 13-е сутки. Поступала в связи с клинической картиной перфорации полого органа. Оперирована  - ушивание острой язвы тонкой кишки. При дальнейшем дообследовании выявлен вторичный сифилис с поражением тонкого кишечника. Каждые 1-2 дня – санационные релапаротомии, ушивание вновь и вновь образующихся язв тонкой кишки, санация, дренирование брюшной полости. В промежутках между оперативными вмешательствами энтеральное кормление не проводили, в назоинтестинальный зонд вводили глюкозо-солевые растворы, больная также получала парентеральное питание. Вчера хирурги оценили интраоперационную картину как положительную: новых язв нет,  петли кишки умеренно не расширены, вяло перистальтируют, стихающий фибринозный перитонит, брюшная полость промыта и ушита наглухо. Через 1 ч после завершения оперативного вмешательства больная была экстубирована. Вы осматриваете ее сегодня утром. Она в ясном сознании, доступна продуктивному контакту, контактна, ориентирована верно. Кожные покровы бледно-розовой окраски, теплые на ощупь, высыпаний нет. Температура тела 37,2. Дышит самостоятельно, проводится инсуффляция увлажненного кислорода через носовые канюли 2 л/мин, частота дыхания 16/мин, сатурация по пульсоксиметру 98%. Артериальное давление 110/58 мм рт.ст., синусовый ритм, ЧСС 110/мин. Центральное венозное давление _1 см водного столба. Диурез за последние 6 часов 120 мл/ч. Живот мягкий, при пальпации умеренно болезненный в области лапаротомной раны, повязка сухая, по страховочному дренажу из брюшной полости оттекает сукровичное с примесью фибрина отделяемое, 200 мл за последние 6 ч. Выслушивается вялая перистальтика. Внутрибрюшное давление 8 мм рт.ст.  Тошноты, рвоты за сутки не отмечалось. В зонд введено 800 мл глюкозо-солевой смеси, оттекло 200 мл светлого желудочного отделяемого. КЩС – см. рисунок. &lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;@@PLUGINFILE@@/%D1%80%D0%B8%D1%81%D1%83%D0%BD%D0%BE%D0%BA%20%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B0%2096.jpg&quot; alt=&quot;&quot; width=&quot;1200&quot; height=&quot;1200&quot; class=&quot;img-fluid atto_image_button_text-bottom&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;br&gt;&lt;p&gt;&lt;/p&gt;&lt;p dir=&quot;ltr&quot; style=&quot;text-align:left;&quot;&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;font-size:0.9375rem;&quot;&gt;Какова тактика нутритивной поддержки на момент осмотра?&lt;/span&gt;&lt;/p&gt;&lt;br&gt;&lt;p&gt;&lt;/p&gt;]]></prompt>
+				<img src="103887-070b1d9b0-7962-4d40-9d3c-599fd7ecd7b6.jpg" alt=""/>
+						<simpleChoice identifier="A$7308797" neutral="" index="5">
+			<![CDATA[&lt;!--2--&gt;Продолжить введение глюкозо-электролитого раствора в назогастральный зонд]]>
+            							</simpleChoice>
+						<simpleChoice identifier="A$7308796" neutral="" index="4">
+			<![CDATA[&lt;!--2--&gt;Начать поить, продолжить парентеральную нутритивную поддержку]]>
+            							</simpleChoice>
+						<simpleChoice identifier="A$7308795" neutral="" index="3">
+			<![CDATA[&lt;!--2--&gt;Начать кормление по щадящему столу]]>
+            							</simpleChoice>
+						<simpleChoice identifier="A$7308794" neutral="" index="2">
+			<![CDATA[&lt;!--2--&gt;Начать введение питательной смеси в назогастральный зонд, продолжить парентеральную нутритивную поддержку]]>
+            							</simpleChoice>
+						<simpleChoice identifier="A$7308793" neutral="" index="1">
+			<![CDATA[&lt;!--2--&gt;Энтерально голод, продолжить парентеральное кормление]]>
+            							</simpleChoice>
+			            		</choiceInteraction>
+					<p><![CDATA[&lt;!--0--&gt;]]></p>
+			</itemBody>
+	<responseProcessing
+			template="http://www.imsglobal.org/question/qti_v2p1/rptemplates/match_correct"
+		><responseCondition>
+	<responseIf>
+		<gt>
+			<variable identifier="SCORE"/>
+			<baseValue baseType="integer">0</baseValue>
+		</gt>
+		<setOutcomeValue identifier="LMS_FEEDBACK">
+			<baseValue baseType="identifier">true</baseValue>
+		</setOutcomeValue>
+	</responseIf>
+	<responseElse>
+		<setOutcomeValue identifier="LMS_FEEDBACK">
+			<baseValue baseType="identifier">false</baseValue>
+		</setOutcomeValue>
+	</responseElse>
+</responseCondition>
+	<responseCondition>
+	<responseIf>
+		<and>
+			<equal toleranceMode="absolute">
+				<mapResponse identifier="RESPONSE"/>
+				<baseValue baseType="float">0</baseValue>
+			</equal>
+			<match>
+                <variable identifier="RESPONSE"/>
+                <correct identifier="RESPONSE"/>
+            </match>
+		</and>
+		<setOutcomeValue identifier = "NEUTRAL">
+			<baseValue baseType="float">1</baseValue>
+		</setOutcomeValue>
+	</responseIf>
+</responseCondition>
+		<setOutcomeValue identifier="ANSWER_FEEDBACK">
+			<variable identifier="RESPONSE"/>
+		</setOutcomeValue>
+	</responseProcessing>
+	</assessmentItem>

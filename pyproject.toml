@@ -1,7 +1,7 @@
 [project]
-name = "vsmu-scripts"
+name = "testparser"
 dynamic = ["version"]
-description = "VSMU tests parser"
+description = "Multiple choice test parser, converter, deduplicator"
 readme = "README.md"
 requires-python = ">=3.8.10"
 license = {file = "LICENSE"}
@@ -28,10 +28,10 @@ dev = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "vsmu.__version__"}
+version = {attr = "testparser.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/radioxoma/vsmu-scripts"
+Homepage = "https://github.com/radioxoma/testparser"
 
 [project.gui-scripts]
-testparser = "vsmu.__main__:main"
+testparser = "testparser.__main__:main"

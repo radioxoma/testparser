@@ -1,8 +1,10 @@
 # [Multiple choice](https://en.wikipedia.org/wiki/Multiple_choice) test parser, converter, deduplicator
 
+> tl;dr: Parse various test formats into simple plain text MyTestX format for storage and review. Export to Anki when necessary. UTF-8 is default encoding. Images/media aren't supported.
+
 ## Installation
 
-    $ pip install https://github.com/radioxoma/vsmu-scripts/archive/refs/heads/master.zip
+    $ pip install https://github.com/radioxoma/testparser/archive/refs/heads/master.zip
     $ testparser --help
 
 ## Usage
@@ -25,9 +27,9 @@ Check `testparser --help` for available formats and file extensions. See source 
 ### Export
 
 * `-p` print tests to stdout
-* `--to-mytestx` Use parser *TextToMyTestX.exe* from it's website ([example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_mytestx.txt)).
-* `--to-anki` Install desktop [Anki](https://en.wikipedia.org/wiki/Anki_(software)) version, *File > Import*. Type Basic. Fields separated by Tab. Import even if existing note has same first field. Check "*Allow HTML in fields*" (HTML required for test alignment to left), [example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_anki.csv). Standard fields "Question" and "Answer" are used.
-*  `--to-crib` short text for printing ([example](https://github.com/radioxoma/vsmu-scripts/blob/master/tests/evsmu/g495_crib.txt)).
+* `--to-mytestx` Use parser *TextToMyTestX.exe* from it's website ([example](https://github.com/radioxoma/testparser/blob/master/tests/evsmu/g495_mytestx.txt)).
+* `--to-anki` Install desktop [Anki](https://en.wikipedia.org/wiki/Anki_(software)) version, *File > Import*. Type Basic. Fields separated by Tab. Import even if existing note has same first field. Check "*Allow HTML in fields*" (HTML required for test alignment to left), [example](https://github.com/radioxoma/testparser/blob/master/tests/evsmu/g495_anki.csv). Standard fields "Question" and "Answer" are used.
+*  `--to-crib` short text for printing ([example](https://github.com/radioxoma/testparser/blob/master/tests/evsmu/g495_crib.txt)).
 
 
 ### Anki
@@ -49,8 +51,6 @@ If you learn **bunch of tests** which you **should already know**, you need othe
 
 
 ## Test formats
-
-> tl;dr: for this program use MyTestX as storage/review format, export to Anki when necessary. UTF-8 is encoding by default. Images/media not supported.
 
 There are plenty _similar-but-not-the-same_ formats like Aiken, MyTestX, Iren. Search [Moodle Category:Questions](https://docs.moodle.org/401/en/Category:Questions) for widely accepted formats.
 
@@ -85,6 +85,7 @@ http://mytest.klyaksa.net
     - Another false answer
 
     # Second question
+    @ image.jpg
     + Right answer
     - False answer
     + Another right answer
@@ -131,13 +132,14 @@ https://irenproject.ru
     Missing word format
     WebCT format
 
-#### etc
+#### IMS QTI (Question and Test Interoperability specification) [import](https://en.wikipedia.org/wiki/QTI)
 
-* IMS Question and Test Interoperability specification (QTI)
-    * XML-based format
-    * https://en.wikipedia.org/wiki/QTI
-    * https://www.imsglobal.org/activity/qtiapip
-    * https://pyslet.readthedocs.io/en/latest/imsqtiv2p1.html
+* Supported by Mirapolis LMS (imsqti_v2p1 XML)
+* [Habrahabr review](https://habr.com/ru/post/325980/)
+* https://www.imsglobal.org/activity/qtiapip
+* https://pyslet.readthedocs.io/en/latest/imsqtiv2p1.html
+
+#### etc
 
 * pyslet https://readthedocs.org/projects/pyslet/
 * Yaml-based https://github.com/robbert-harms/ybe

@@ -4,11 +4,11 @@ import os
 import sys
 import unittest
 
-from vsmu import __main__ as testparser
+from testparser import __main__ as testparser
 
 curdir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, curdir + "/../")
-sys.path.insert(0, curdir + "/../vsmu")
+sys.path.insert(0, curdir + "/../testparser")
 
 
 class TestEvsmu(unittest.TestCase):
@@ -101,6 +101,19 @@ class TestRaw(unittest.TestCase):
     def test_to_mytestx_output(self):
         with open(os.path.join(curdir, "raw/raw.mytestx.txt")) as f:
             self.assertEqual(f.read(), "\n".join([str(k) for k in self.quiz]))
+
+
+class TestImsQti(unittest.TestCase):
+    def setUp(self):
+        self.quiz = testparser.parse_mytestx(os.path.join(curdir, "imsqti/mytestx.txt"))
+
+    def test_imsqti_v2p1(self):
+        self.assertEqual(
+            self.quiz,
+            testparser.parse_imsqti_v2p1(
+                os.path.join(curdir, "imsqti/imsqti_v2p1_question_TQ670105.xml")
+            ),
+        )
 
 
 if __name__ == "__main__":
