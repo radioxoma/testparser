@@ -796,13 +796,14 @@ def parse_geetest_epub(filename: str) -> list[Question | None]:
 def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
     """Parser for IMS QTI XML tests.
 
-    Written for imsqti_v2p1, but looks like imsqti_v2p2 is supported too.
-    Used in Mirapolis LMS https://hr-dzm.mos.ru (тесты Московский врач)
+    Support is partial. Tested with imsqti_v2p1, imsqti_v2p2.
+
+    Developed for Mirapolis LMS imsqti_v2p1 https://hr-dzm.mos.ru (тесты "Московский врач")
 
     c2123 - probably test id
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/103887-070b1d9b0-7962-4d40-9d3c-599fd7ecd7b6.jpg
         103887 question 'title'
-        TQ$1670105 'identifier', monotone increment
+        TQ$1670105 'identifier', monotone increment or test kind name "choiceMultiple"
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670085.xml - first existing
     https://hr-dzm.mos.ru/mirads/lmscontent/c2123/question_TQ$1670134.xml - last
 
@@ -816,28 +817,27 @@ def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
         return s.replace(" ", " ").replace("  ", " ").replace("<!--2-->", "").strip()
 
     questions: list[Question | None] = list()
-    ns_name = "imsqti_v2p1"
-    ns = {ns_name: f"http://www.imsglobal.org/xsd/{ns_name}"}
+
+    # ElementTree (unlike Element) knows about namespace
     tree = etree.ElementTree(file=filename).getroot()
-    # Test file type by namespace (no API for that)
-    xml_has_ns = re.match(r"\{(.*?)\}", tree.tag)
-    if xml_has_ns and not xml_has_ns.group(1) in ns.values():
+    if "imsqti_v2p" in tree.tag:  # imsqti_v2p1, imsqti_v2p2
+        ns = {"": tree.tag[1:].split("}")[0]}  # Extract exact namespace
+    else:
         print(f"Skipping XML '{filename}' due to namespace mismatch")
         return questions
-    if tree.find(f".//{ns_name}:responseDeclaration", ns) is None:
+
+    if tree.find(".//responseDeclaration", ns) is None:
         print(f"Skipping XML '{filename}': test content not found")
         return questions
     valid = [
         k.text
         for k in tree.findall(
-            f".//{ns_name}:responseDeclaration/{ns_name}:correctResponse/{ns_name}:value",
+            ".//responseDeclaration/correctResponse/value",
             ns,
         )
     ]
-    question = html.unescape(
-        tree.find(f".//{ns_name}:choiceInteraction/{ns_name}:prompt", ns).text
-    )
-    image_src = tree.find(f".//{ns_name}:choiceInteraction/{ns_name}:img", ns)
+    question = html.unescape(tree.find(".//choiceInteraction/prompt", ns).text)
+    image_src = tree.find(".//choiceInteraction/img", ns)
 
     # Both question and variant 'identifier' increase monotonically
     title = strip(lxml.html.fromstring(tree.get("title")).text_content())
@@ -851,9 +851,7 @@ def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
     if image_src is not None:
         Q.add_image_path(image_src.get("src"))
 
-    for choice in tree.iterfind(
-        f".//{ns_name}:choiceInteraction/{ns_name}:simpleChoice", ns
-    ):
+    for choice in tree.iterfind(".//choiceInteraction/simpleChoice", ns):
         # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
         c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
         Q.add_one_answer(c, choice.get("identifier") in valid)
