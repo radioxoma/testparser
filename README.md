@@ -134,10 +134,11 @@ https://irenproject.ru
 
 #### IMS QTI (Question and Test Interoperability specification) [import](https://en.wikipedia.org/wiki/QTI)
 
-* Supported by Mirapolis LMS (imsqti_v2p1 XML)
-* [Habrahabr review](https://habr.com/ru/post/325980/)
 * https://www.imsglobal.org/activity/qtiapip
 * https://pyslet.readthedocs.io/en/latest/imsqtiv2p1.html
+* https://github.com/gpoore/text2qti
+* https://habr.com/ru/post/325980
+* Supported by Mirapolis LMS (imsqti_v2p1 XML)
 
 #### etc
 
