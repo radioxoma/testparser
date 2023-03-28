@@ -769,17 +769,17 @@ def parse_blocks(filename):
 def parse_geetest_epub(filename: str) -> list[Question | None]:
     """https://geetest.ru/ parser.
 
-    Currently XML export is broken, so parsing epub instead.
+    XML export from website is broken, so parsing epub instead.
     """
     zcontent = zipfile.ZipFile(filename)
     xhtml = zcontent.read("OEBPS/0.html")
-    ns = {"xhtml": "http://www.w3.org/1999/xhtml"}
+    ns = {"": "http://www.w3.org/1999/xhtml"}
     tree = etree.fromstring(xhtml)
 
     strip_num = re.compile(r"^\d+\.\s*")
     Q = None
     questions = list()
-    for p in tree.iterfind(".//xhtml:body/xhtml:p", ns):
+    for p in tree.iterfind(".//body/p", ns):
         if p.attrib:
             if p.attrib["class"] == "question":
                 if Q is not None:
