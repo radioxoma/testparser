@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-__description__ = """\
-Test quiz parser and converter
-"""
+__description__ = "Multiple choice test parser, converter, deduplicator"
 
 import argparse
 import html
@@ -15,7 +13,6 @@ except ImportError:
     import xml.etree.ElementTree as etree
 
 import zipfile
-from collections import OrderedDict
 from itertools import zip_longest
 
 import lxml.html
@@ -26,10 +23,10 @@ class Question:
 
     def __init__(self, question):
         super().__init__()
-        self.__strip_compare = "\n\t :;.?"  # If None, act as defaut Python strip()
-        self.question = question
-        self.answers = OrderedDict()
-        self.image_path = None
+        self.__strip_compare: str = "\n\t :;.?"  # If None, act as defaut Python strip()
+        self.question: str = question
+        self.answers: dict = dict()
+        self.image_path: str = None
         if not self.question:
             warnings.warn("Empty question added")
         self.__cache_gen_question = None
@@ -42,6 +39,7 @@ class Question:
         named 'to_mytestx', 'to_anki' etc.
 
             # An Question
+            @ image.jpg
             + Right answer
             - False answer
             + Another right answer
@@ -49,12 +47,12 @@ class Question:
 
         At least one empty string between tests.
         """
-        info = f"# {self.question}\n"
+        info = [f"# {self.question}"]
         if self.image_path:
-            info += f"@ {self.image_path}\n"
+            info.append(f"@ {self.image_path}")
         for v, c in self.answers.items():
-            info += "{} {}\n".format("+" if c else "-", v)
-        return info
+            info.append("{} {}".format("+" if c else "-", v))
+        return "\n".join(info) + "\n"
 
     def __hash__(self):
         return hash(
@@ -86,11 +84,12 @@ class Question:
         """
         return any(self.answers.values())
 
-    def add_one_answer(self, variant, correct):
+    def add_one_answer(self, variant: str, correct: bool) -> None:
         """Add one answer-corect_or_none pair.
 
-        :param unicode variants: An answer
-        :param bool correct:
+        Args:
+            variant: An answer.
+            correct: True for correct, False for incorrect or unknown.
         """
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
@@ -118,10 +117,11 @@ class Question:
         for v, c in zip_longest(variants, correct, fillvalue=False):
             self.add_one_answer(v, c)
 
-    def add_image_path(self, im_path):
-        """Add link to image file.
+    def add_image_path(self, im_path: str) -> None:
+        """Add one link to image file.
 
-        :param str im_path: Path to image file.
+        Args:
+            im_path: Path to image file.
         """
         self.image_path = im_path
 
@@ -135,7 +135,7 @@ class Question:
 
     def sort_answers(self):
         """Sort answers in place."""
-        self.answers = OrderedDict(sorted(self.answers.items()))
+        self.answers = dict(sorted(self.answers.items()))
 
     @property
     def question_generalized(self):
