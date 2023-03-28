@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import unittest
 
 from testparser import __main__ as testparser
 
 curdir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, curdir + "/../")
-sys.path.insert(0, curdir + "/../testparser")
 
 
 class TestEvsmu(unittest.TestCase):
@@ -104,14 +101,21 @@ class TestRaw(unittest.TestCase):
 
 
 class TestImsQti(unittest.TestCase):
-    def setUp(self):
-        self.quiz = testparser.parse_mytestx(os.path.join(curdir, "imsqti/mytestx.txt"))
-
-    def test_imsqti_v2p1(self):
+    def test_imsqti(self):
         self.assertEqual(
-            self.quiz,
+            testparser.parse_mytestx(
+                os.path.join(curdir, "imsqti/imsqti_v2p1_question_TQ670105.mytestx.txt")
+            ),
             testparser.parse_imsqti_v2p1(
                 os.path.join(curdir, "imsqti/imsqti_v2p1_question_TQ670105.xml")
+            ),
+        )
+        self.assertEqual(
+            testparser.parse_mytestx(
+                os.path.join(curdir, "imsqti/imsqti_v2p2_multichoise2.mytestx.txt")
+            ),
+            testparser.parse_imsqti_v2p1(
+                os.path.join(curdir, "imsqti/imsqti_v2p2_multichoise2.xml")
             ),
         )
 

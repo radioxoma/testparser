@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assessmentItem xmlns="http://www.imsglobal.org/xsd/imsqti_v2p2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.imsglobal.org/xsd/imsqti_v2p2  http://www.imsglobal.org/xsd/qti/qtiv2p2/imsqti_v2p2.xsd"
+    identifier="choiceMultiple" title="Живой организм: строение и изучение 1" adaptive="false" timeDependent="false">
+    <responseDeclaration identifier="RESPONSE" cardinality="multiple" baseType="identifier">
+        <correctResponse>
+            <value>S</value>
+            <value>P</value>
+            <value>M</value>
+        </correctResponse>
+        <mapping lowerBound="0" upperBound="3" defaultValue="-3">
+            <mapEntry mapKey="S" mappedValue="1"/>
+            <mapEntry mapKey="P" mappedValue="1"/>
+            <mapEntry mapKey="M" mappedValue="1"/>
+            <mapEntry mapKey="K" mappedValue="-1"/>
+            <mapEntry mapKey="G" mappedValue="-1"/>
+            <mapEntry mapKey="L" mappedValue="-1"/>
+        </mapping>
+    </responseDeclaration>
+    <outcomeDeclaration identifier="SCORE" cardinality="single" baseType="float"/>
+    <itemBody>
+        <choiceInteraction responseIdentifier="RESPONSE" shuffle="true" maxChoices="0">
+            <prompt>Выберите из предложенных рисунков те, на которых изображены живые организмы</prompt>
+            <simpleChoice identifier="K" fixed="false">Комета
+                <p><img src="../k.png" alt="Комета"/></p></simpleChoice>
+            <simpleChoice identifier="S" fixed="false">Сосна
+                <p><img src="../s.png" alt="Сосна"/></p></simpleChoice>
+            <simpleChoice identifier="G" fixed="false">Гейзер
+                <p><img src="../g.png" alt="Гейзер"/></p></simpleChoice>
+            <simpleChoice identifier="L" fixed="false">Тающий лед
+                <p><img src="../l.png" alt="Тающий лед"/></p></simpleChoice>
+            <simpleChoice identifier="P" fixed="false">Подберезовик
+                <p><img src="../p.png" alt="Подберезовик"/></p></simpleChoice>
+            <simpleChoice identifier="M" fixed="false">Мох сфагнум
+                <p><img src="../m.png" alt="Мох сфагнум"/></p></simpleChoice>
+        </choiceInteraction>
+    </itemBody>
+</assessmentItem>

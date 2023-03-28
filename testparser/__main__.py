@@ -845,19 +845,19 @@ def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
 
     # Q = Question(f"{tree.get('identifier')} {tree.get('title')} {question}")
     if title == question:
-        Q = Question(f"{tree.get('identifier')} {question}")
+        Q = Question(question)
     else:
-        Q = Question(f"{tree.get('identifier')} {title} {question}")
+        Q = Question(f"{title} {question}")
     if image_src is not None:
         Q.add_image_path(image_src.get("src"))
 
     for choice in tree.iterfind(".//choiceInteraction/simpleChoice", ns):
         # c = f"{choice.get('index')} {choice.get('identifier')} {html.unescape(choice.text.strip())}"
-        c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
+        # c = f"{choice.get('index')} {strip(html.unescape(choice.text))}"
+        c = strip(html.unescape(choice.text))
         Q.add_one_answer(c, choice.get("identifier") in valid)
     Q.sort_answers()
     questions.append(Q)
-    # return sorted(questions, key=lambda k: k.question)
     return questions
 
 
