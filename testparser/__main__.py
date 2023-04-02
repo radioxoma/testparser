@@ -3,6 +3,7 @@
 __description__ = "Multiple choice test parser, converter, deduplicator"
 
 import argparse
+import functools
 import html
 import re
 import warnings
@@ -26,35 +27,31 @@ class Question:
         self.__strip_compare: str = "\n\t :;.?"  # If None, act as defaut Python strip()
         self.question: str = question
         self.answers: dict = dict()
-        self.image_path: str = None
+        self.image_path: str = ""
         if not self.question:
             warnings.warn("Empty question added")
-        self.__cache_gen_question = None
-        self.__cache_gen_answers = None
 
     def __str__(self):
-        """Formatted representation in human-readable format (old MyTextX style).
+        """Print question in human-readable format (old MyTextX style).
 
-        There are general functions for exporting quiz in specific formats
-        named 'to_mytestx', 'to_anki' etc.
-
-            # An Question
+            # An question
             @ image.jpg
             + Right answer
             - False answer
             + Another right answer
             - Another false-marked answer
 
-        At least one empty string between tests.
+        At least one empty string between tests must be preserved.
         """
         info = [f"# {self.question}"]
         if self.image_path:
             info.append(f"@ {self.image_path}")
         for v, c in self.answers.items():
-            info.append("{} {}".format("+" if c else "-", v))
+            info.append(f"{'+' if c else '-'} {v}")
         return "\n".join(info) + "\n"
 
     def __hash__(self):
+        """Mimic immutable type for ability to pack object in set."""
         return hash(
             (
                 self.question_generalized,
@@ -73,8 +70,6 @@ class Question:
         # Answers with True/False mark
         if not self.answers_generalized == other.answers_generalized:
             return False
-        # if not self.answers_generalized.keys() == other.answers_generalized.keys():  # Answers only
-        #    return False
         return True
 
     def __bool__(self):
@@ -137,31 +132,22 @@ class Question:
         """Sort answers in place."""
         self.answers = dict(sorted(self.answers.items()))
 
-    @property
-    def question_generalized(self):
-        """Question stripped of meaningless symbols for comparison."""
-        if not self.__cache_gen_question:
-            self.__cache_gen_question = self.question.casefold().strip(
-                self.__strip_compare
-            )
-        return self.__cache_gen_question
+    @functools.cached_property
+    def question_generalized(self) -> str:
+        """Question for comparison, stripped of meaningless symbols."""
+        return self.question.casefold().strip(self.__strip_compare)
 
-    @property
-    def answers_generalized(self):
-        """Answers stripped of meaningless symbols for comparison.
+    @functools.cached_property
+    def answers_generalized(self) -> dict:
+        """Answers for comparison, stripped of meaningless symbols.
 
-        Note, that it doesn't returns OrderedDict, as it compares order.
+        Order not preserved, as only choices with bool flags matters.
         """
-        if not self.__cache_gen_answers:
-            items = list()
-            for k, v in self.answers.items():
-                k = k.casefold().strip(self.__strip_compare)
-                # if answers_only:
-                #     items.append(k)
-                # else:
-                items.append((k, v))  # Answers with True/False mark
-            self.__cache_gen_answers = dict(items)
-        return self.__cache_gen_answers
+        items = dict()
+        for k, v in self.answers.items():
+            # Answers with True/False mark
+            items[k.casefold().strip(self.__strip_compare)] = v
+        return items
 
 
 def clear(strlist: list[str]) -> list[str]:
@@ -517,7 +503,7 @@ def parse_rmanpo(filename: str) -> list[Question | None]:
                 if len(cor_letter) != 1:
                     # questions.append(Question(next(istrip).strip('@')))
                     warnings.warn(
-                        f"Unsupported associative question type, skipping {line}"
+                        f"Unsupported question type: associative question {line}"
                     )
                     continue
                 valid = corr_matrix_bool[cor_letter]
