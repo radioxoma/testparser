@@ -122,14 +122,10 @@ class Question:
 
     def correct(self):
         """Return only correct answers."""
-        correct = list()
-        for v, c in self.answers.items():
-            if c:
-                correct.append(v)
-        return correct
+        return filter(self.answers.get, self.answers)
 
-    def sort_answers(self):
-        """Sort answers in place."""
+    def sort_answers(self) -> None:
+        """Sort answers dict in place."""
         self.answers = dict(sorted(self.answers.items()))
 
     @functools.cached_property
@@ -620,11 +616,9 @@ def parse_raw2(filename):
                     f"Invalid АБВГДЕ increment, check newlines '{match.group(0)}'"
                 )
             if not choice[1:].startswith(". "):
-                warnings.warn(
-                    f"Choice not begging with '<letter>. ' '{match.group(0)}'"
-                )
+                warnings.warn(f"Choice not starts with '<letter>. ' '{match.group(0)}'")
             Q.add_one_answer(choice[3:], valid == choice[0])
-        if not Q.correct():
+        if not Q:
             warnings.warn(f"No valid answer for a question '{match.group(0)}'")
         if Q is not None:
             questions.append(Q)
@@ -680,7 +674,7 @@ def parse_raw3(filename):
                     f"Choice not begging with '<letter>) ' '{match_question.group(0)}'"
                 )
             Q.add_one_answer(choice[3:], valid == choice[0])
-        # if not Q.correct():
+        # if not Q:
         #     warnings.warn(f"No valid answer for a question '{match_question.group(0)}'")
         if Q is not None:
             questions.append(Q)
