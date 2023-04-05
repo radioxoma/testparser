@@ -223,7 +223,7 @@ def parse_gift(filename: str) -> list[Question | None]:
     * Each choice on newline
     * Remove integer at the beginning of the question
 
-    https://docs.moodle.org/400/en/GIFT_format
+    https://docs.moodle.org/en/GIFT_format
 
     180. СУТОЧНАЯ ДОЗА ЛИДОКАИНА НЕ ДОЛЖНА ПРЕВЫШАТЬ:{
     = 2000 мг
@@ -880,6 +880,37 @@ def to_crib(tests: list[Question]) -> str:
     return "\n".join(result) + "\n"
 
 
+def to_gift(tests: list[Question]) -> str:
+    """Export to Moodle GIFT test format.
+
+    https://docs.moodle.org/en/GIFT_format
+    """
+
+    def escape_gift(s):
+        """Escape symbols restricted in GIFT format."""
+        escaped = s
+        for symbol in r"~=#{}:":
+            if symbol in escaped:
+                escaped = escaped.replace(symbol, "\\" + symbol)
+        return escaped
+
+    result = list()
+    for q in tests:
+        answers = list()
+        if q.image_path:  # Pluging required for image import
+            img_html = rf"""<img src="@@PLUGINFILE@@{q.image_path}" />"""
+        else:
+            img_html = ""
+        for v, c in q.answers.items():
+            answers.append(f"{'=' if c else '~'}{escape_gift(v)}")
+        result.append(
+            "{}{}{{\n{}\n}}\n".format(
+                escape_gift(q.question), escape_gift(img_html), "\n".join(answers)
+            )
+        )
+    return "\n".join(result)
+
+
 def load_files(files: list[str]) -> list[Question | None]:
     """Parse all files from a list."""
     tests = list()
@@ -973,6 +1004,7 @@ def main():
         help="Save as tab-formatted text file for import in Anki cards https://apps.ankiweb.net/",
     )
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
+    parser.add_argument("--to-gift", help="Export to Moodle GIFT format.")
     args = parser.parse_args()
 
     tests = load_files(args.input)
@@ -1010,6 +1042,9 @@ def main():
     if args.to_crib:
         with open(args.to_crib, mode="w", encoding="utf-8", newline="\r\n") as f:
             f.write(to_crib(tests))
+    if args.to_gift:
+        with open(args.to_gift, mode="w", encoding="utf-8") as f:
+            f.write(to_gift(tests))
 
 
 if __name__ == "__main__":

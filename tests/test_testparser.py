@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import pathlib
 import unittest
 
 from testparser import __main__ as testparser
@@ -117,6 +118,18 @@ class TestImsQti(unittest.TestCase):
             testparser.parse_imsqti_v2p1(
                 os.path.join(curdir, "imsqti/imsqti_v2p2_multichoise2.xml")
             ),
+        )
+
+
+class TestGift(unittest.TestCase):
+    def test_gift(self):
+        tests = testparser.parse_mytestx(
+            os.path.join(curdir, "gift/moodle_mytestx.txt")
+        )
+
+        self.assertEqual(
+            testparser.to_gift(tests),
+            pathlib.Path(os.path.join(curdir, "gift/moodle_gift.txt")).read_text(),
         )
 
 
