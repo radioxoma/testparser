@@ -218,7 +218,7 @@ def duplicates(tests):
 
 
 def parse_gift(filename: str) -> list[Question | None]:
-    """Parse limited subset of Moodle gift format.
+    """Parse limited subset of Moodle GIFT format.
 
     * Each choice on newline
     * Remove integer at the beginning of the question
@@ -257,7 +257,7 @@ def parse_gift(filename: str) -> list[Question | None]:
 
 
 def parse_do(filename: str) -> list[Question | None]:
-    """Parse Moodle tests from do.vsmu.by.
+    """Parse Moodle HTML tests from do.vsmu.by.
 
     Todo:
     * Добавить +- к вопросам с ниспадающим списком.
@@ -384,7 +384,7 @@ def parse_do(filename: str) -> list[Question | None]:
 
 
 def parse_evsmu(filename: str) -> list[Question | None]:
-    """e-vsmu.by Moodle tests parser."""
+    """Parse Moodle HTML tests from e-vsmu.by."""
     doc = lxml.html.parse(filename).getroot()
 
     questions: list[Question | None] = list()

@@ -18,24 +18,30 @@ class TestEvsmu(unittest.TestCase):
         self.quiz_evsmu.sort(key=lambda q: q.question.casefold())
 
     def test_evsmu_to_mytestx_output(self):
-        with open(os.path.join(curdir, "evsmu/g495_mytestx.txt")) as f:
-            for a, b in zip(
-                f.read().split(), "\n".join([str(k) for k in self.quiz_evsmu]).split()
-            ):
-                try:
-                    self.assertEqual(a, b)
-                except AssertionError:
-                    print(a)
-                    print(b)
-                    raise
+        for a, b in zip(
+            pathlib.Path(os.path.join(curdir, "evsmu/g495_mytestx.txt"))
+            .read_text()
+            .split(),
+            "\n".join([str(k) for k in self.quiz_evsmu]).split(),
+        ):
+            try:
+                self.assertEqual(a, b)
+            except AssertionError:
+                print(a)
+                print(b)
+                raise
 
     def test_evsmu_to_anki_output(self):
-        with open(os.path.join(curdir, "evsmu/g495_anki.csv"), encoding="utf-8") as f:
-            self.assertEqual(f.read(), testparser.to_anki(self.quiz_evsmu))
+        self.assertEqual(
+            testparser.to_anki(self.quiz_evsmu),
+            pathlib.Path(os.path.join(curdir, "evsmu/g495_anki.csv")).read_text(),
+        )
 
     def test_evsmu_to_crib_output(self):
-        with open(os.path.join(curdir, "evsmu/g495_crib.txt"), encoding="utf-8") as f:
-            self.assertEqual(f.read(), testparser.to_crib(self.quiz_evsmu))
+        self.assertEqual(
+            testparser.to_crib(self.quiz_evsmu),
+            pathlib.Path(os.path.join(curdir, "evsmu/g495_crib.txt")).read_text(),
+        )
 
 
 class TestDo(unittest.TestCase):
@@ -88,8 +94,10 @@ class TestMytestx(unittest.TestCase):
         )
 
     def test_to_mytestx_output(self):
-        with open(os.path.join(curdir, "mytestx/quiz_sorted.txt")) as f:
-            self.assertEqual(f.read(), "\n".join([str(k) for k in self.quiz_mytestx]))
+        self.assertEqual(
+            "\n".join([str(k) for k in self.quiz_mytestx]),
+            pathlib.Path(os.path.join(curdir, "mytestx/quiz_sorted.txt")).read_text(),
+        )
 
 
 class TestRaw(unittest.TestCase):
@@ -97,8 +105,10 @@ class TestRaw(unittest.TestCase):
         self.quiz = testparser.parse_raw(os.path.join(curdir, "raw/raw.txt"))
 
     def test_to_mytestx_output(self):
-        with open(os.path.join(curdir, "raw/raw.mytestx.txt")) as f:
-            self.assertEqual(f.read(), "\n".join([str(k) for k in self.quiz]))
+        self.assertEqual(
+            "\n".join([str(k) for k in self.quiz]),
+            pathlib.Path(os.path.join(curdir, "raw/raw.mytestx.txt")).read_text(),
+        )
 
 
 class TestImsQti(unittest.TestCase):
@@ -122,7 +132,14 @@ class TestImsQti(unittest.TestCase):
 
 
 class TestGift(unittest.TestCase):
-    def test_gift(self):
+    @unittest.skip("Parser doesn't currently comply spec")
+    def test_gift_parser(self):
+        self.assertEqual(
+            testparser.parse_gift(os.path.join(curdir, "gift/moodle_gift.txt")),
+            testparser.parse_mytestx(os.path.join(curdir, "gift/moodle_mytestx.txt")),
+        )
+
+    def test_gift_export(self):
         tests = testparser.parse_mytestx(
             os.path.join(curdir, "gift/moodle_mytestx.txt")
         )
