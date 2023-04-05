@@ -7,16 +7,11 @@ import functools
 import html
 import re
 import warnings
-
-try:
-    from lxml import etree
-except ImportError:
-    import xml.etree.ElementTree as etree
-
 import zipfile
 from itertools import zip_longest
 
 import lxml.html
+from lxml import etree  # Expected to be compatible with xml.etree.ElementTree
 
 
 class Question:
@@ -425,7 +420,7 @@ def parse_evsmu(filename: str) -> list[Question | None]:
 def parse_mytestx(filename: str) -> list[Question | None]:
     """Read text file in MyTestX format.
 
-    Encoding used to be cp1251.
+    Similar, but not compatible with Iren format https://irenproject.ru/konverter_testov_iz_tekstovyx_fajlov
 
         // Comment
         # Question in one line
@@ -938,7 +933,6 @@ def load_files(files: list[str]) -> list[Question | None]:
         elif filename.endswith(".xml"):
             test_part = parse_imsqti_v2p1(filename)
         else:
-            # print(f"Unsupported filename extension {filename}")
             continue
         tests.extend(test_part)
     return tests
@@ -997,14 +991,14 @@ def main():
     )
     parser.add_argument(
         "--to-mytestx",
-        help="Save human-readable plain text with \\r\\n. Can be imported in http://mytest.klyaksa.net https://irenproject.ru",
+        help="Save human-readable plain text with \\r\\n. Can be imported in http://mytest.klyaksa.net https://irenproject.ru (*mytestx.txt)",
     )
     parser.add_argument(
         "--to-anki",
         help="Save as tab-formatted text file for import in Anki cards https://apps.ankiweb.net/",
     )
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
-    parser.add_argument("--to-gift", help="Export to Moodle GIFT format.")
+    parser.add_argument("--to-gift", help="Export to Moodle GIFT format (*gift.txt).")
     args = parser.parse_args()
 
     tests = load_files(args.input)
@@ -1036,12 +1030,12 @@ def main():
     if args.to_mytestx:
         with open(args.to_mytestx, mode="w", encoding="utf-8", newline="\r\n") as f:
             f.write("\n".join([str(k) for k in tests]))
-    if args.to_anki:
-        with open(args.to_anki, mode="w", encoding="utf-8") as f:
-            f.write(to_anki(tests))
     if args.to_crib:
         with open(args.to_crib, mode="w", encoding="utf-8", newline="\r\n") as f:
             f.write(to_crib(tests))
+    if args.to_anki:
+        with open(args.to_anki, mode="w", encoding="utf-8") as f:
+            f.write(to_anki(tests))
     if args.to_gift:
         with open(args.to_gift, mode="w", encoding="utf-8") as f:
             f.write(to_gift(tests))
