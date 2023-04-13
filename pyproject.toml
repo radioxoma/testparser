@@ -31,7 +31,7 @@ dev = [
 version = {attr = "testparser.__version__"}
 
 [project.urls]
-Homepage = "https://github.com/radioxoma/testparser"
+homepage = "https://github.com/radioxoma/testparser"
 
-[project.gui-scripts]
+[project.scripts]
 testparser = "testparser.__main__:main"

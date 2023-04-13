@@ -159,9 +159,9 @@ def short(text: list[str], count_stripped: bool = False) -> str:
     """Shorten str for crib.
 
     >>> short('Something wrong with compatibility regressions.'.split())
-    u'Som-ng wrong with com-ty reg-s.'
+    'Som-ng wrong with com-ty reg-s.'
     >>> short('Something wrong with compatibility regressions.'.split(), True)
-    u'Som4ng wrong with com8ty reg7s.'
+    'Som4ng wrong with com8ty reg7s.'
     """
 
     def sh(word):
@@ -185,7 +185,7 @@ def min_diff(strlist: list[str]) -> list[str]:
     ...     ['Clinical notes is the same way',
     ...      'Clinical symptoms of lupus',
     ...      'Clinical symptoms of lupus or something sophisticated']))
-    [u'Cli-al notes is the same way', u'Cli-al sym-ms of lupus', u'Cli-al sym-ms of lupus or']
+    ['Cli-al notes is the same way', 'Cli-al sym-ms of lupus', 'Cli-al sym-ms of lupus or']
     """
     questions = list()
     while len(strlist) > 1:
