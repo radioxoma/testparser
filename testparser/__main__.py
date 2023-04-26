@@ -5,6 +5,7 @@ __description__ = "Multiple choice test parser, converter, deduplicator"
 import argparse
 import functools
 import html
+import json
 import re
 import warnings
 import zipfile
@@ -151,8 +152,13 @@ def clear(strlist: list[str]) -> list[str]:
 
 
 def rmsp(s: str) -> str:
-    """Replace multiple spaces with one."""
+    """Replace multiple spaces with one, strip from ends."""
     return re.sub(r"\ +", " ", s.strip())
+
+
+def rmspall(s: str) -> str:
+    r"""Remove all duplicate \s in string, strip from ends."""
+    return re.sub(r"\s+", " ", s.strip())
 
 
 def short(text: list[str], count_stripped: bool = False) -> str:
@@ -836,6 +842,34 @@ def parse_imsqti_v2p1(filename: str) -> list[Question | None]:
     return questions
 
 
+def parse_pt_minzdrav_gov_ru(filename: str) -> list[Question | None]:
+    """Parse JSON tests from https://pt.minzdrav.gov.ru.
+
+    Демонстрационная версия онлайн аттестации специалистов Министерства здравоохранения РФ
+        https://pt.minzdrav.gov.ru/proftest/testing_v2/demo
+        curl 'https://pt.minzdrav.gov.ru/api/proftest/me_tests_v2/demo' -X POST --data-raw 'cat_id=641'
+        https://pt.minzdrav.gov.ru/storage/help/guide_applicant_demo.pdf
+
+    Facts:
+        Service found 2023-04-26. Help PDF denotes 2018 year.
+        No info about real world usage of this tests.
+        Every attempt returns 30 multichoice tests with answers (JSON).
+        Maintained by ПИК «ПрофТест»
+    """
+    with open(filename) as f:
+        test = json.load(f)
+
+    questions: list[Question | None] = list()
+    for question in test["data"]["questions"]:
+        Q = Question(rmspall(question["description"]))
+        for choice in question["answers"]:
+            Q.add_one_answer(
+                rmspall(choice["description"]), float(choice["fraction"]) > 0
+            )
+        questions.append(Q)
+    return questions
+
+
 def to_anki(tests: list[Question]) -> str:
     """Export to Anki TSV format (UTF-8, tab delimiter, HTML).
 
@@ -932,6 +966,8 @@ def load_files(files: list[str]) -> list[Question | None]:
             test_part = parse_geetest_epub(filename)
         elif filename.endswith(".xml"):
             test_part = parse_imsqti_v2p1(filename)
+        elif filename.endswith("pt.minzdrav.gov.ru.json"):
+            test_part = parse_pt_minzdrav_gov_ru(filename)
         else:
             continue
         tests.extend(test_part)
