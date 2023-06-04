@@ -3,7 +3,6 @@
 __description__ = "Multiple choice test parser, converter, deduplicator"
 
 import argparse
-import functools
 import html
 import json
 import re
@@ -14,132 +13,8 @@ from itertools import zip_longest
 import lxml.html
 from lxml import etree  # Expected to be compatible with xml.etree.ElementTree
 
-
-class Question:
-    """Quiz question object containing plain text question and choices."""
-
-    def __init__(self, question):
-        super().__init__()
-        self.__strip_compare: str = "\n\t :;.?"  # If None, act as defaut Python strip()
-        self.question: str = question
-        self.answers: dict = dict()
-        self.image_path: str = ""
-        if not self.question:
-            warnings.warn("Empty question added")
-
-    def __str__(self):
-        """Print question in human-readable format (old MyTextX style).
-
-            # An question
-            @ image.jpg
-            + Right answer
-            - False answer
-            + Another right answer
-            - Another false-marked answer
-
-        At least one empty string between tests must be preserved.
-        """
-        info = [f"# {self.question}"]
-        if self.image_path:
-            info.append(f"@ {self.image_path}")
-        for v, c in self.answers.items():
-            info.append(f"{'+' if c else '-'} {v}")
-        return "\n".join(info) + "\n"
-
-    def __hash__(self):
-        """Mimic immutable type for ability to pack object in set."""
-        return hash(
-            (
-                self.question_generalized,
-                self.image_path,
-                tuple(sorted(self.answers_generalized.items())),
-            )
-        )
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            raise AttributeError("Comparison with other object type")
-        if not self.question_generalized == other.question_generalized:
-            return False
-        if not self.image_path == other.image_path:
-            return False
-        # Answers with True/False mark
-        if not self.answers_generalized == other.answers_generalized:
-            return False
-        return True
-
-    def __bool__(self):
-        """True if contains any choice marked as True.
-
-        Test can contain all False choices if answer wasn't given.
-        """
-        return any(self.answers.values())
-
-    def add_one_answer(self, variant: str, correct: bool) -> None:
-        """Add one answer-corect_or_none pair.
-
-        Args:
-            variant: An answer.
-            correct: True for correct, False for incorrect or unknown.
-        """
-        assert isinstance(variant, str)
-        assert isinstance(correct, bool)
-        variant = variant.strip(";,. ")
-        if variant in self.answers:
-            warnings.warn(
-                f"Question '{self.question}' already has this variant: '{variant}'"
-            )
-            if self.answers[variant]:
-                warnings.warn(
-                    f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}"
-                )
-                return
-        self.answers[variant] = correct
-
-    def add_multiple_answers(self, variants, correct):
-        """Add bunch of answer-corect_or_none pairs.
-
-        :param list variants: An test variant
-        :param bool correct: It's possible to pass just [False,] list
-            to set all unknown answers to false. List will be expanded.
-        """
-        assert isinstance(variants, list) and isinstance(correct, list)
-        assert len(variants) >= len(correct)
-        for v, c in zip_longest(variants, correct, fillvalue=False):
-            self.add_one_answer(v, c)
-
-    def add_image_path(self, im_path: str) -> None:
-        """Add one link to image file.
-
-        Args:
-            im_path: Path to image file.
-        """
-        self.image_path = im_path
-
-    def correct(self):
-        """Return only correct answers."""
-        return filter(self.answers.get, self.answers)
-
-    def sort_answers(self) -> None:
-        """Sort answers dict in place."""
-        self.answers = dict(sorted(self.answers.items()))
-
-    @functools.cached_property
-    def question_generalized(self) -> str:
-        """Question for comparison, stripped of meaningless symbols."""
-        return self.question.casefold().strip(self.__strip_compare)
-
-    @functools.cached_property
-    def answers_generalized(self) -> dict:
-        """Answers for comparison, stripped of meaningless symbols.
-
-        Order not preserved, as only choices with bool flags matters.
-        """
-        items = dict()
-        for k, v in self.answers.items():
-            # Answers with True/False mark
-            items[k.casefold().strip(self.__strip_compare)] = v
-        return items
+import testparser.parsers
+from testparser.parsers import Question
 
 
 def clear(strlist: list[str]) -> list[str]:
@@ -945,32 +820,34 @@ def load_files(files: list[str]) -> list[Question | None]:
     tests = list()
     for filename in files:
         if filename.endswith("gift.txt"):
-            test_part = parse_gift(filename)
+            parse = parse_gift
         elif filename.endswith("evsmu.htm"):
-            test_part = parse_evsmu(filename)
+            parse = parse_evsmu
         elif filename.endswith("do.htm"):
-            test_part = parse_do(filename)
+            parse = parse_do
         elif filename.endswith("mytestx.txt"):
-            test_part = parse_mytestx(filename)
+            parse = parse_mytestx
         elif filename.endswith("rmanpo.txt"):
-            test_part = parse_rmanpo(filename)
+            parse = parse_rmanpo
         elif filename.endswith("raw.txt"):
-            test_part = parse_raw(filename)
+            parse = parse_raw
         elif filename.endswith("raw2.txt"):
-            test_part = parse_raw2(filename)
+            parse = parse_raw2
         elif filename.endswith("raw3.txt"):
-            test_part = parse_raw3(filename)
+            parse = parse_raw3
         elif filename.endswith("blocks.txt"):
-            test_part = parse_blocks(filename)
+            parse = parse_blocks
         elif filename.endswith("geetest.epub"):
-            test_part = parse_geetest_epub(filename)
+            parse = parse_geetest_epub
         elif filename.endswith(".xml"):
-            test_part = parse_imsqti_v2p1(filename)
+            parse = parse_imsqti_v2p1
         elif filename.endswith("pt.minzdrav.gov.ru.json"):
-            test_part = parse_pt_minzdrav_gov_ru(filename)
+            parse = parse_pt_minzdrav_gov_ru
+        elif filename.endswith("rawStructure.json"):
+            parse = testparser.parsers.parse_crmm
         else:
             continue
-        tests.extend(test_part)
+        tests.extend(parse(filename))
     return tests
 
 
