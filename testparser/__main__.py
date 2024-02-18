@@ -14,16 +14,7 @@ import lxml.html
 from lxml import etree  # Expected to be compatible with xml.etree.ElementTree
 
 import testparser.parsers
-from testparser.parsers import Question
-
-
-def clear(strlist: list[str]) -> list[str]:
-    """Remove empty strings and spaces from sequence.
-
-    >>> clear(['123', '12', '', '2', '1', ''])
-    ['123', '12', '2', '1']
-    """
-    return list(filter(None, map(lambda x: x.strip(), strlist)))
+from testparser.parsers import Question, clear
 
 
 def rmsp(s: str) -> str:
@@ -845,6 +836,8 @@ def load_files(files: list[str]) -> list[Question | None]:
             parse = parse_pt_minzdrav_gov_ru
         elif filename.endswith("palms.json"):
             parse = testparser.parsers.parse_palms
+        elif filename.endswith("lms_prometey.htm"):
+            parse = testparser.parsers.parse_lms_prometey
         else:
             continue
         tests.extend(parse(filename))

@@ -133,6 +133,15 @@ class Question:
         return items
 
 
+def clear(strlist: list[str]) -> list[str]:
+    """Remove empty strings and spaces from sequence.
+
+    >>> clear(['123', '12', '', '2', '1', ''])
+    ['123', '12', '2', '1']
+    """
+    return list(filter(None, map(lambda x: x.strip(), strlist)))
+
+
 def parse_palms(filename: str) -> list[Question | None]:
     """Parse MS PaLMS rawStructure.json (name '*.palms.json').
 
@@ -208,3 +217,28 @@ def parse_palms(filename: str) -> list[Question | None]:
                 if item["type"] == "test":
                     course_questions.extend(extract_tests(part["items"]))
     return course_questions
+
+
+def parse_lms_prometey(filename: str) -> list[Question | None]:
+    """Parse Prometey LMS.
+
+    https://msc.botkin.hospital/close/students/demo.asp?idAccess=6225&idCourse=%7B772FDF85%2D9263%2D429E%2D9B87%2D6ABC4C5C9754%7D
+    https://msc.botkin.hospital/close/store/reports/6225.htm
+    """
+    questions: list[Question | None] = list()
+    doc = lxml.html.parse(filename).getroot()
+    multichoice = doc.xpath(".//div[@class='questTrue' or @class='questFalse']")
+    for test in multichoice:
+        test_question = " ".join(
+            clear(test.xpath(".//div[@class='questionText']/span//text()"))
+        )
+        Q = Question(test_question)
+        choices = test.xpath(".//table[@class='list']/tbody/tr")
+        for choice in choices:
+            # answИстина, answЛожь marks user answer, not valid answer
+            Q.add_one_answer(
+                " ".join(choice.xpath(".//td[3]//text()")).strip(),
+                bool(choice.xpath(".//td/i[@class='fa fa-circle']")),
+            )
+        questions.append(Q)
+    return questions
