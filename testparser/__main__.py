@@ -843,8 +843,8 @@ def load_files(files: list[str]) -> list[Question | None]:
             parse = parse_imsqti_v2p1
         elif filename.endswith("pt.minzdrav.gov.ru.json"):
             parse = parse_pt_minzdrav_gov_ru
-        elif filename.endswith("rawStructure.json"):
-            parse = testparser.parsers.parse_crmm
+        elif filename.endswith("palms.json"):
+            parse = testparser.parsers.parse_palms
         else:
             continue
         tests.extend(parse(filename))
