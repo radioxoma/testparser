@@ -1,9 +1,12 @@
 import functools
 import json
+import logging
 import warnings
 from itertools import zip_longest
 
 import lxml.html
+
+logger = logging.getLogger(__name__)
 
 
 class Question:
@@ -76,13 +79,17 @@ class Question:
         assert isinstance(variant, str)
         assert isinstance(correct, bool)
         variant = variant.strip(";,. ")
+        if not variant:
+            warnings.warn(f"Empty variant added for question '{self.question}'")
         if variant in self.answers:
-            warnings.warn(
-                f"Question '{self.question}' already has this variant: '{variant}'"
-            )
+            # Do not treat empty as duplicates
+            if variant:
+                warnings.warn(
+                    f"Question '{self.question}' already has this variant: '{variant}'"
+                )
             if self.answers[variant]:
                 warnings.warn(
-                    f"Duplicated variant marked as true previously, refuse to mark it as false: {self.question}"
+                    f"Duplicated variant '{variant}' marked as true previously, refuse to mark it as false: {self.question}"
                 )
                 return
         self.answers[variant] = correct
@@ -194,10 +201,27 @@ def parse_palms(filename: str) -> list[Question | None]:
                 # print(f"{key}={item['config'][key]}")
                 pass
             for question in item["content"]["questions"]:
+                logger.debug(f"'{question['text']}'")
                 Q = Question(lxml.html.fromstring(question["text"]).text_content())
+                if "image" in question and question["image"]:
+                    Q.add_image_path(question["image"])
                 for answer in question["answers"]:
+                    logger.debug(f"'{answer['text']}'")
+                    # May be empty if choice is as picture
+                    # May contain <img src="data:image/png;base64 blobs
+                    # Otherwise LXML claims 'lxml.etree.ParserError: Document is empty'
+                    if answer["text"]:
+                        answer_text = lxml.html.fromstring(
+                            answer["text"]
+                        ).text_content()
+                    else:
+                        answer_text = ""
+                    if "image" in answer and answer["image"]:
+                        answer_text += " " + answer["image"]
+                    if 'src="data:image/' in answer["text"]:
+                        answer_text += " contains img blob"
                     Q.add_one_answer(
-                        lxml.html.fromstring(answer["text"]).text_content(),
+                        answer_text,
                         answer["correct"],
                     )
                 questions.append(Q)
@@ -209,11 +233,11 @@ def parse_palms(filename: str) -> list[Question | None]:
     course_questions = list()
     # Courses/parts/items ('video', 'slide', 'test')
     for course in courses["courses"]:
-        # print(course["name"])
+        logger.debug(f"Course: '{course['name']}'")
         for part in course["items"]:
-            # print(part["name"])
+            logger.debug(f"Course item: '{part['name']}'")
             for item in part["items"]:
-                # print(f"{item['name']} '{item['type']}'")
+                logger.debug(f"Type '{item['type']}': '{item['name']}'")
                 if item["type"] == "test":
                     course_questions.extend(extract_tests(part["items"]))
     return course_questions

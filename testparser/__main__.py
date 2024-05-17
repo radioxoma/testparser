@@ -5,6 +5,7 @@ __description__ = "Multiple choice test parser, converter, deduplicator"
 import argparse
 import html
 import json
+import logging
 import re
 import warnings
 import zipfile
@@ -15,6 +16,8 @@ from lxml import etree  # Expected to be compatible with xml.etree.ElementTree
 
 import testparser.parsers
 from testparser.parsers import Question, clear
+
+logger = logging.getLogger(__name__)
 
 
 def rmsp(s: str) -> str:
@@ -879,7 +882,7 @@ def main():
     parser.add_argument(
         "input",
         nargs="+",
-        help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'blocks.txt', 'geetest.epub'). Multiple files will be concatenated.",
+        help="Files to parse. Parser will be chosen by filename extension ('gift.txt', 'evsmu.htm', 'do.htm', 'mytestx.txt', 'rmanpo.txt', 'raw.txt', 'raw2.txt', 'blocks.txt', 'geetest.epub', 'palms.json'). Multiple files will be concatenated.",
     )
     parser.add_argument("-u", "--unify", action="store_true", help="Remove duplicates")
     parser.add_argument(
@@ -905,7 +908,17 @@ def main():
     )
     parser.add_argument("--to-crib", help="Save as sorted shortened cheat sheet text.")
     parser.add_argument("--to-gift", help="Export to Moodle GIFT format (*gift.txt).")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=1,
+        help="Set logger level, -vvvvv for DEBUG verbosity.",
+    )
     args = parser.parse_args()
+
+    args.verbose = 70 - (10 * args.verbose) if args.verbose > 0 else 0
+    logging.basicConfig(level=args.verbose)
 
     tests = load_files(args.input)
     tests_unique = set(tests)
