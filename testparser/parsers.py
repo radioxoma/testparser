@@ -149,6 +149,11 @@ def clear(strlist: list[str]) -> list[str]:
     return list(filter(None, map(lambda x: x.strip(), strlist)))
 
 
+def strhtml(html_piece: str) -> str:
+    """Extract plain text from HTML shortcut."""
+    return lxml.html.fromstring(html_piece).text_content().strip()
+
+
 def parse_palms(filename: str) -> list[Question | None]:
     """Parse MS PaLMS rawStructure.json (name '*.palms.json').
 
@@ -201,29 +206,40 @@ def parse_palms(filename: str) -> list[Question | None]:
                 # print(f"{key}={item['config'][key]}")
                 pass
             for question in item["content"]["questions"]:
-                logger.debug(f"'{question['text']}'")
-                Q = Question(lxml.html.fromstring(question["text"]).text_content())
+                # question["type"] in ("radio", "checkbox", "sorting", "binding")
+                logger.debug(f"Question type: {question['type']}: '{question['text']}'")
+                Q = Question(strhtml(question["text"]))
                 if "image" in question and question["image"]:
                     Q.add_image_path(question["image"])
                 for answer in question["answers"]:
-                    logger.debug(f"'{answer['text']}'")
                     # May be empty if choice is as picture
                     # May contain <img src="data:image/png;base64 blobs
                     # Otherwise LXML claims 'lxml.etree.ParserError: Document is empty'
-                    if answer["text"]:
-                        answer_text = lxml.html.fromstring(
-                            answer["text"]
-                        ).text_content()
-                    else:
-                        answer_text = ""
+                    answer_text = list()
+                    if "text" in answer:
+                        # Missing for "bind" type
+                        logger.debug(f"'{answer['text']}'")
+                        answer_text.append(strhtml(answer["text"]))
+                        if 'src="data:image/' in answer["text"]:
+                            answer_text.append(" contains img blob")
+
                     if "image" in answer and answer["image"]:
-                        answer_text += " " + answer["image"]
-                    if 'src="data:image/' in answer["text"]:
-                        answer_text += " contains img blob"
-                    Q.add_one_answer(
-                        answer_text,
-                        answer["correct"],
-                    )
+                        answer_text.append(" " + answer["image"])
+
+                    match question["type"]:
+                        case "checkbox" | "radio":
+                            Q.add_one_answer("".join(answer_text), answer["correct"])
+                        case "sorting":
+                            notions = [strhtml(n["text"]) for n in answer["notions"]]
+                            answer_text.append(": " + str(sorted(notions)))
+                            Q.add_one_answer("".join(answer_text), True)
+                        case "binding":
+                            answer_text.append(strhtml(answer["source"]["text"]))
+                            answer_text.append(" -> ")
+                            answer_text.append(strhtml(answer["boundTarget"]["text"]))
+                            Q.add_one_answer("".join(answer_text), True)
+                        case _:
+                            raise NotImplementedError("Unknown test type")
                 questions.append(Q)
         return questions
 
