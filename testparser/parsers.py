@@ -194,7 +194,10 @@ def parse_palms(filename: str) -> list[Question | None]:
         """
         questions = list()
         for item in items:
-            assert item["type"] == "test", "Not a test item"
+            # Test can have "slide" item with an introductory part
+            if item["type"] != "test":
+                continue
+
             for key in (
                 "attempts",
                 "timeLimit",
@@ -202,6 +205,7 @@ def parse_palms(filename: str) -> list[Question | None]:
                 "isAnswersShuffled",
                 "completionThreshold",
                 "isQuestionsShuffled",
+                "isFeedback",  # Show if answer is valid during test attempt
             ):
                 # print(f"{key}={item['config'][key]}")
                 pass
